@@ -19,8 +19,8 @@ export default function ConfirmationPage() {
     checkIn: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
     checkOut: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days from now
     hotel: {
-      name: "Hotel Del Ángel - Cancún",
-      location: "Cancún, México",
+      name: "Hotel Del Ángel - Abasolo",
+      location: "La Paz, México",
       image: "/placeholder.svg?height=300&width=500",
     },
     room: {

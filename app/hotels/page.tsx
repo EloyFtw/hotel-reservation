@@ -21,7 +21,7 @@ const branchesList = [
     id: 1,
     name: "Hotel Del Angel Centro",
     location: "La Paz, México",
-    image: "/placeholder.svg?height=300&width=500",
+    image: "/images/logo.png?height=300&width=500",
     price: 850,
     rating: 5.0,
     discount: 10,
@@ -31,7 +31,7 @@ const branchesList = [
     id: 2,
     name: "Hotel Del Angel Abasolo",
     location: "Abasolo e/Algodo, Col. Pueblo Nuevo C.P. 23060, La Paz, México", 
-    image: "/placeholder.svg?height=300&width=500",
+    image: "/images/logo.png?height=300&width=500",
     price: 1200,
     rating: 5.0,
     discount: 0,
@@ -41,7 +41,7 @@ const branchesList = [
     id: 123,
     name: "Hotel Del Angel Cabo",
     location: "Cabo San Lucas, México",
-    image: "/placeholder.svg?height=300&width=500",
+    image: "/images/logo.png?height=300&width=500",
     price: 1200,
     rating: 5.0,
     discount: 0,
@@ -116,15 +116,9 @@ export default function HotelsPage() {
                         </label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Checkbox id="pool" />
-                        <label htmlFor="pool" className="text-sm">
-                          Piscina
-                        </label>
-                      </div>
-                      <div className="flex items-center space-x-2">
                         <Checkbox id="breakfast" />
                         <label htmlFor="breakfast" className="text-sm">
-                          Desayuno incluido
+                          Restaurante
                         </label>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -136,7 +130,7 @@ export default function HotelsPage() {
                       <div className="flex items-center space-x-2">
                         <Checkbox id="spa" />
                         <label htmlFor="spa" className="text-sm">
-                          Spa
+                          Zona centrica
                         </label>
                       </div>
                     </div>
@@ -197,18 +191,6 @@ export default function HotelsPage() {
                         <Checkbox id="resort" />
                         <label htmlFor="resort" className="text-sm">
                           Resort
-                        </label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox id="apartment" />
-                        <label htmlFor="apartment" className="text-sm">
-                          Apartamento
-                        </label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox id="villa" />
-                        <label htmlFor="villa" className="text-sm">
-                          Villa
                         </label>
                       </div>
                     </div>

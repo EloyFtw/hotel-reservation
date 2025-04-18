@@ -32,7 +32,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 const branchData = {
   id: 1,
   name: "Hotel Del Ángel - Abasolo",
-  location: "Abasolo e/Algodon Col. Pueblo Nuevo C.P. 23060La Paz, México",
+  location: "Abasolo e/Algodon Col. Pueblo Nuevo C.P. 23060, La Paz, México",
   description:
     "Disfruta de unas vacaciones de lujo en esta impresionante sucursal frente al mar con vistas panorámicas al océano Caribe. El Hotel Del Ángel Abasolo ofrece habitaciones elegantes, múltiples habitaciones, restaurantes gourmet y un ________ de clase mundial.",
   rating: 5.0,
@@ -40,20 +40,15 @@ const branchData = {
   price: 1200,
   discount: 5,
   images: [
-    "/placeholder.svg?height=600&width=800",
-    "/placeholder.svg?height=600&width=800",
-    "/placeholder.svg?height=600&width=800",
-    "/placeholder.svg?height=600&width=800",
-    "/placeholder.svg?height=600&width=800",
+    "/images/logo.png?height=600&width=800",
+    "/images/hotels/balandra.jpg?height=600&width=800",
+    "/images/hotels/tecolote.jpg?height=600&width=800",
   ],
   amenities: [
     { name: "WiFi gratis", icon: Wifi },
     { name: "Desayuno", icon: Coffee },
-    { name: "Piscina", icon: Bed },
     { name: "Estacionamiento", icon: Bed },
     { name: "Aire acondicionado", icon: Bed },
-    { name: "Gimnasio", icon: Bed },
-    { name: "Spa", icon: Bed },
     { name: "Restaurante", icon: Bed },
   ],
   rooms: [
@@ -64,7 +59,7 @@ const branchData = {
       price: 1850,
       capacity: 2,
       amenities: ["WiFi gratis", "TV", "Aire acondicionado", "Caja fuerte"],
-      image: "/placeholder.svg?height=300&width=500",
+      image: "/images/logo.png",
     },
     {
       id: 2,
@@ -73,7 +68,7 @@ const branchData = {
       price: 2450,
       capacity: 3,
       amenities: ["WiFi gratis", "TV", "Jacuzzi", "Balcón", "Aire acondicionado", "Caja fuerte"],
-      image: "/placeholder.svg?height=300&width=500",
+      image: "/images/logo.png",
     },
     {
       id: 123, 
@@ -82,7 +77,7 @@ const branchData = {
       price: 3200,
       capacity: 4,
       amenities: ["WiFi gratis", "TV", "Refrigerador", "Balcón", "Jacuzzi", "Aire acondicionado", "Caja fuerte"],
-      image: "/placeholder.svg?height=300&width=500",
+      image: "/images/logo.png",
     },
   ],
 }

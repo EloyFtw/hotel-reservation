@@ -23,7 +23,7 @@ const hotelData = {
   id: 1,
   name: "Hotel Del Ángel Abasolo",
   location: "La Paz, México",
-  image: "/placeholder.svg?height=300&width=500",
+  image: "/images/logo.png?height=300&width=500",
   rooms: [
     {
       id: 1,
@@ -411,7 +411,7 @@ export default function CheckoutPage() {
                 <div className="flex gap-4">
                   <div className="relative w-20 h-20 rounded-md overflow-hidden shrink-0">
                     <Image
-                      src={hotelData.image || "/placeholder.svg"}
+                      src={hotelData.image || "/images/logo.png"}
                       alt={hotelData.name}
                       fill
                       className="object-cover"

@@ -26,18 +26,18 @@ import {
 // Mock data for user reservations
 const reservations = [
   {
-    id: "RES-123456",
+    id: "123",
     status: "confirmed",
     checkIn: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
     checkOut: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days from now
     hotel: {
-      name: "Grand Hotel & Spa",
-      location: "Cancún, México",
-      image: "/placeholder.svg?height=300&width=500",
+      name: "203 - Habitacion Sencilla, Hotel Del Ángel Centro",
+      location: "La Paz, México",
+      image: "/images/logo.png?height=300&width=500",
     },
     room: {
-      name: "Habitación Estándar",
-      price: 1850,
+      name: "Habitación Sencilla Estándar",
+      price: 850,
     },
     totalAmount: 6438, // 3 nights with taxes
   },
@@ -47,13 +47,13 @@ const reservations = [
     checkIn: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
     checkOut: new Date(Date.now() + 35 * 24 * 60 * 60 * 1000), // 35 days from now
     hotel: {
-      name: "Beachfront Suites",
-      location: "Playa del Carmen, México",
-      image: "/placeholder.svg?height=300&width=500",
+      name: "210 - Habitacion Doble, Hotel Del Ángel Abasolo",
+      location: "La Paz, México",
+      image: "/images/logo.png?height=300&width=500",
     },
     room: {
-      name: "Suite Junior",
-      price: 2450,
+      name: "Doble Estándar",
+      price: 1200,
     },
     totalAmount: 14210, // 5 nights with taxes
   },
@@ -63,13 +63,13 @@ const reservations = [
     checkIn: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000), // 20 days ago
     checkOut: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000), // 15 days ago
     hotel: {
-      name: "City Lights Hotel",
-      location: "Ciudad de México",
-      image: "/placeholder.svg?height=300&width=500",
+      name: "215 - Habitacion Triple, Hotel Del Ángel Cabo",
+      location: "La Paz, México",
+      image: "/images/logo.png?height=300&width=500",
     },
     room: {
-      name: "Habitación Deluxe",
-      price: 1200,
+      name: "Habitación Triple Estándar",
+      price: 1400,
     },
     totalAmount: 4176, // 3 nights with taxes
   },
@@ -79,18 +79,18 @@ const reservations = [
 const favoriteHotels = [
   {
     id: 1,
-    name: "Grand Hotel & Spa",
-    location: "Cancún, México",
-    image: "/placeholder.svg?height=300&width=500",
-    price: 1850,
+    name: "Hotel Del Ángel Centro",
+    location: "La Paz, Baja California Sur, México",
+    image: "/images/logo.png?height=300&width=500",
+    price: 850,
     rating: 4.8,
   },
   {
     id: 4,
-    name: "Oceanfront Paradise",
-    location: "Puerto Vallarta, México",
-    image: "/placeholder.svg?height=300&width=500",
-    price: 1650,
+    name: "Del Angel Cabo",
+    location: "Los Cabos, Baja California Sur, México",
+    image: "/images/logo.png?height=300&width=500",
+    price: 1200,
     rating: 4.9,
   },
 ]
