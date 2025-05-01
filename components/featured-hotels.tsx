@@ -1,66 +1,91 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import Image from "next/image"
-import { Heart, MapPin, Star } from "lucide-react"
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { Heart, MapPin, Star } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
-// Mock data for featured branches
-const featuredBranches = [
-  {
-    id: 1,
-    name: "Hotel Del Angel Centro",
-    location: "La Paz, México",
-    image: "/images/logo.png",
-    price: 850,
-    rating: 5.0,
-    discount: 10,
-    tags: ["Centro Historico", "Comodidad"],
-  },
-  {
-    id: 123,
-    name: "Hotel Del Angel Abasolo",
-    location: "Abasolo e/Algodo, Col. Pueblo Nuevo C.P. 23060, La Paz, México", 
-    image: "/images/logo.png",
-    price: 1200,
-    rating: 5.0,
-    discount: 0,
-    tags: ["Sucursal mas grande", "Restaurante"],
-  },
-  {
-    id: 3,
-    name: "Hotel Del Angel Cabo",
-    location: "Cabo San Lucas, México",
-    image: "/images/logo.png",
-    price: 1200,
-    rating: 5.0,
-    discount: 0,
-    tags: ["Centro Historico", "Lujo"],
-  },
-]
+import { getHoteles } from "@/lib/api/hoteles";
+import { Branch } from "@/types/hotel";
 
 export default function FeaturedBranches() {
-  const [favorites, setFavorites] = useState<number[]>([])
+  const [hoteles, setHoteles] = useState<Branch[]>([]);
+  const [favorites, setFavorites] = useState<number[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Obtener hoteles al montar el componente
+  useEffect(() => {
+    const fetchHoteles = async () => {
+      try {
+        setIsLoading(true);
+        const data = await getHoteles();
+        setHoteles(data);
+        setError(null);
+      } catch (err) {
+        setError("No se pudieron cargar los hoteles. Intenta de nuevo.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchHoteles();
+  }, []);
 
   const toggleFavorite = (id: number) => {
     if (favorites.includes(id)) {
-      setFavorites(favorites.filter((favId) => favId !== id))
+      setFavorites(favorites.filter((favId) => favId !== id));
     } else {
-      setFavorites([...favorites, id])
+      setFavorites([...favorites, id]);
     }
+  };
+
+  // Mostrar skeleton mientras se cargan los datos
+  if (isLoading) {
+    return (
+      <div className="grid gap-6 pt-8 md:grid-cols-2 lg:grid-cols-4">
+        {Array(4).fill(0).map((_, index) => (
+          <Card key={index} className="overflow-hidden">
+            <Skeleton className="w-full h-48" />
+            <CardContent className="p-4 space-y-2">
+              <Skeleton className="h-6 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-4 w-1/4" />
+            </CardContent>
+            <CardFooter className="p-4 pt-0 flex justify-between">
+              <Skeleton className="h-6 w-1/3" />
+              <Skeleton className="h-8 w-20" />
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  // Mostrar mensaje de error si falla la petición
+  if (error) {
+    return (
+      <div className="pt-8 text-center">
+        <p className="text-red-500">{error}</p>
+        <Button onClick={() => window.location.reload()} className="mt-4">
+          Reintentar
+        </Button>
+      </div>
+    );
   }
 
   return (
     <div className="grid gap-6 pt-8 md:grid-cols-2 lg:grid-cols-4">
-      {featuredBranches.map((branch) => (
+      {hoteles.map((branch) => (
         <Card key={branch.id} className="overflow-hidden">
           <div className="relative">
             <Image
-              src={branch.image || "/images.logo.png"}
+              src={branch.image || "/images/logo.png"}
               alt={branch.name}
               width={500}
               height={300}
@@ -93,7 +118,7 @@ export default function FeaturedBranches() {
                 {branch.location}
               </div>
               <div className="flex flex-wrap gap-1 pt-1">
-                {branch.tags.map((tag) => (
+                {branch.tags?.map((tag) => (
                   <Badge key={tag} variant="secondary" className="text-xs">
                     {tag}
                   </Badge>
@@ -115,5 +140,5 @@ export default function FeaturedBranches() {
         </Card>
       ))}
     </div>
-  )
+  );
 }

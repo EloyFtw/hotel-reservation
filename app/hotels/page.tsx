@@ -1,79 +1,112 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import Image from "next/image"
-import { Filter, Heart, MapPin, Search, Star } from "lucide-react"
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { Filter, Heart, MapPin, Search, Star } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Slider } from "@/components/ui/slider"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Slider } from "@/components/ui/slider";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
 
-// Mock data for branches
-const branchesList = [
-  {
-    id: 1,
-    name: "Hotel Del Angel Centro",
-    location: "La Paz, México",
-    image: "/images/logo.png?height=300&width=500",
-    price: 850,
-    rating: 5.0,
-    discount: 10,
-    tags: ["Centro Historico", "Comodidad"],
-  },
-  {
-    id: 2,
-    name: "Hotel Del Angel Abasolo",
-    location: "Abasolo e/Algodo, Col. Pueblo Nuevo C.P. 23060, La Paz, México", 
-    image: "/images/logo.png?height=300&width=500",
-    price: 1200,
-    rating: 5.0,
-    discount: 0,
-    tags: ["Sucursal mas grande", "Restaurante"],
-  },
-  {
-    id: 123,
-    name: "Hotel Del Angel Cabo",
-    location: "Cabo San Lucas, México",
-    image: "/images/logo.png?height=300&width=500",
-    price: 1200,
-    rating: 5.0,
-    discount: 0,
-    tags: ["Centro Historico", "Lujo"],
-  }
-]
+import { getHoteles } from "@/lib/api/hoteles";
+import { Branch } from "@/types/hotel";
 
 export default function HotelsPage() {
-  const [favorites, setFavorites] = useState<number[]>([])
-  const [priceRange, setPriceRange] = useState([0, 5000])
-  const [searchTerm, setSearchTerm] = useState("")
-  const [showFilters, setShowFilters] = useState(false)
+  const [hotels, setHotels] = useState<Branch[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [favorites, setFavorites] = useState<number[]>([]);
+  const [priceRange, setPriceRange] = useState([0, 5000]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Obtener hoteles del backend
+  useEffect(() => {
+    const fetchHoteles = async () => {
+      try {
+        setIsLoading(true);
+        const data = await getHoteles();
+        setHotels(data);
+        setError(null);
+      } catch (err) {
+        setError("No se pudieron cargar los hoteles. Intenta de nuevo.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchHoteles();
+  }, []);
 
   const toggleFavorite = (id: number) => {
     if (favorites.includes(id)) {
-      setFavorites(favorites.filter((favId) => favId !== id))
+      setFavorites(favorites.filter((favId) => favId !== id));
     } else {
-      setFavorites([...favorites, id])
+      setFavorites([...favorites, id]);
     }
-  }
+  };
 
   const handlePriceChange = (value: number[]) => {
-    setPriceRange(value)
+    setPriceRange(value);
+  };
+
+  const filteredHotels = hotels.filter(
+    (hotel) =>
+      (hotel.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        hotel.location.toLowerCase().includes(searchTerm.toLowerCase())) &&
+      hotel.price >= priceRange[0] &&
+      hotel.price <= priceRange[1]
+  );
+
+  // Mostrar skeleton mientras se cargan los datos
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container py-6 md:py-8">
+          <Skeleton className="h-8 w-1/2 mb-4" />
+          <Skeleton className="h-6 w-3/4 mb-6" />
+          <div className="flex flex-col md:flex-row gap-6">
+            <div className="hidden md:block w-64 shrink-0">
+              <Skeleton className="h-96 w-full rounded-lg" />
+            </div>
+            <div className="flex-1">
+              <div className="mb-6 flex flex-col sm:flex-row gap-4">
+                <Skeleton className="h-10 flex-1" />
+                <Skeleton className="h-10 w-[180px]" />
+              </div>
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {[...Array(6)].map((_, i) => (
+                  <Skeleton key={i} className="h-64 w-full rounded-lg" />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  const filteredHotels = branchesList.filter(
-    (hotel) =>
-      hotel.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (hotel.location.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        hotel.price >= priceRange[0] &&
-        hotel.price <= priceRange[1]),
-  )
+  // Mostrar mensaje de error si falla la petición
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container py-6 md:py-8 text-center">
+          <p className="text-red-500">{error}</p>
+          <Button onClick={() => window.location.reload()} className="mt-4">
+            Reintentar
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -111,27 +144,19 @@ export default function HotelsPage() {
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
                         <Checkbox id="wifi" />
-                        <label htmlFor="wifi" className="text-sm">
-                          WiFi gratis
-                        </label>
+                        <label htmlFor="wifi" className="text-sm">WiFi gratis</label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Checkbox id="breakfast" />
-                        <label htmlFor="breakfast" className="text-sm">
-                          Restaurante
-                        </label>
+                        <label htmlFor="breakfast" className="text-sm">Restaurante</label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Checkbox id="parking" />
-                        <label htmlFor="parking" className="text-sm">
-                          Estacionamiento
-                        </label>
+                        <label htmlFor="parking" className="text-sm">Estacionamiento</label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Checkbox id="spa" />
-                        <label htmlFor="spa" className="text-sm">
-                          Zona centrica
-                        </label>
+                        <label htmlFor="spa" className="text-sm">Zona céntrica</label>
                       </div>
                     </div>
                   </AccordionContent>
@@ -183,15 +208,11 @@ export default function HotelsPage() {
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
                         <Checkbox id="hotel" />
-                        <label htmlFor="hotel" className="text-sm">
-                          Hotel
-                        </label>
+                        <label htmlFor="hotel" className="text-sm">Hotel</label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Checkbox id="resort" />
-                        <label htmlFor="resort" className="text-sm">
-                          Resort
-                        </label>
+                        <label htmlFor="resort" className="text-sm">Resort</label>
                       </div>
                     </div>
                   </AccordionContent>
@@ -242,33 +263,23 @@ export default function HotelsPage() {
                       <div className="space-y-2">
                         <div className="flex items-center space-x-2">
                           <Checkbox id="wifi-mobile" />
-                          <label htmlFor="wifi-mobile" className="text-sm">
-                            WiFi gratis
-                          </label>
+                          <label htmlFor="wifi-mobile" className="text-sm">WiFi gratis</label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Checkbox id="pool-mobile" />
-                          <label htmlFor="pool-mobile" className="text-sm">
-                            Piscina
-                          </label>
+                          <label htmlFor="pool-mobile" className="text-sm">Piscina</label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Checkbox id="breakfast-mobile" />
-                          <label htmlFor="breakfast-mobile" className="text-sm">
-                            Desayuno incluido
-                          </label>
+                          <label htmlFor="breakfast-mobile" className="text-sm">Desayuno incluido</label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Checkbox id="parking-mobile" />
-                          <label htmlFor="parking-mobile" className="text-sm">
-                            Estacionamiento
-                          </label>
+                          <label htmlFor="parking-mobile" className="text-sm">Estacionamiento</label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Checkbox id="spa-mobile" />
-                          <label htmlFor="spa-mobile" className="text-sm">
-                            Spa
-                          </label>
+                          <label htmlFor="spa-mobile" className="text-sm">Spa</label>
                         </div>
                       </div>
                     </AccordionContent>
@@ -345,7 +356,7 @@ export default function HotelsPage() {
                         {hotel.location}
                       </div>
                       <div className="flex flex-wrap gap-1 pt-1">
-                        {hotel.tags.map((tag) => (
+                        {hotel.tags?.map((tag) => (
                           <Badge key={tag} variant="secondary" className="text-xs">
                             {tag}
                           </Badge>
@@ -378,5 +389,5 @@ export default function HotelsPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
