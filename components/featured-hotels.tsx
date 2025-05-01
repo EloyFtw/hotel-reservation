@@ -60,7 +60,7 @@ export default function FeaturedBranches() {
         <Card key={branch.id} className="overflow-hidden">
           <div className="relative">
             <Image
-              src={branch.image || "/placeholder.svg"}
+              src={branch.image || "/images.logo.png"}
               alt={branch.name}
               width={500}
               height={300}

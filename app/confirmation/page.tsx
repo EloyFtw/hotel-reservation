@@ -21,7 +21,7 @@ export default function ConfirmationPage() {
     hotel: {
       name: "Hotel Del Ángel - Abasolo",
       location: "La Paz, México",
-      image: "/placeholder.svg?height=300&width=500",
+      image: "/images/logo.png?height=300&width=500",
     },
     room: {
       name: "Habitación Estándar",
