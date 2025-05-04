@@ -12,6 +12,7 @@ export interface Hotel {
   Ciudad?: Ciudad; // Opcional, en caso de que no se incluya,
   Direccion: string;
   Tags?: string[]; // Opcional, en caso de que no se incluya
+  
 }
 
 export interface Room {
@@ -33,9 +34,17 @@ export interface Branch {
   reviews: number;
   price: number;
   discount: number;
-  images?: string[];
+  images: string[];
   amenities: { name: string; icon: any }[];
-  rooms?: Room[];
   image?: string;
   tags?: string[];
+  rooms: {
+    id: number;
+    name: string;
+    description: string;
+    price: number;
+    capacity: number;
+    amenities: string[];
+    image: string;
+  }[];
 }

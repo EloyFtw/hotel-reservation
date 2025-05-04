@@ -41,8 +41,14 @@ export const getHoteles = async (): Promise<Branch[]> => {
 // Función para obtener un hotel por ID
 export const getHotelById = async (id: string): Promise<Branch> => {
   try {
+    // Obtener datos del hotel
     const response = await axios.get<Hotel>(`${API_URL}/api/hoteles/${id}`);
     const hotel = response.data;
+
+    // Obtener tipos de habitación del hotel
+    const tiposHabitacionResponse = await axios.get(`${API_URL}/api/tipoHabitaciones?FK_Hotel=${id}`);
+    const tiposHabitacion = tiposHabitacionResponse.data;
+
     return {
       id: hotel.ID_Hotel,
       name: hotel.Nombre,
@@ -59,8 +65,16 @@ export const getHotelById = async (id: string): Promise<Branch> => {
         '/images/hotels/tecolote.jpg',
       ],
       amenities: STATIC_AMENITIES,
-      tags: ['Lujo', 'Vistas Panorámicas'], // Añadido
-      rooms: [],
+      tags: hotel.Tags || [],
+      rooms: tiposHabitacion.map((tipo: any) => ({
+        id: tipo.ID_CAT_TIPO_Habitacion,
+        name: tipo.Tipo || 'Habitación Estándar',
+        description: tipo.Descripcion || 'Habitación cómoda con servicios básicos',
+        price: parseFloat(tipo.Tarifa) || 1000,
+        capacity: (tipo.Cant_Adultos || 2) + (tipo.Cant_Niños || 0),
+        amenities: ['WiFi gratis', 'TV', 'Aire acondicionado'],
+        image: '/images/logo.png',
+      })),
     };
   } catch (error) {
     console.error(`Error fetching hotel with id ${id}:`, error);

@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Image from "next/image"
-import Link from "next/link"
-import { useParams, useRouter } from "next/navigation"
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 import {
   Bed,
   Calendar,
@@ -18,107 +18,111 @@ import {
   Share,
   Star,
   Wifi,
-} from "lucide-react"
-
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Label } from "@/components/ui/label"
-import { Calendar as CalendarComponent } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-
-// Mock data for branch details
-const branchData = {
-  id: 1,
-  name: "Hotel Del Ángel - Abasolo",
-  location: "Abasolo e/Algodon Col. Pueblo Nuevo C.P. 23060, La Paz, México",
-  description:
-    "Disfruta de unas vacaciones de lujo en esta impresionante sucursal frente al mar con vistas panorámicas al océano Caribe. El Hotel Del Ángel Abasolo ofrece habitaciones elegantes, múltiples habitaciones, restaurantes gourmet y un ________ de clase mundial.",
-  rating: 5.0,
-  reviews: 1,
-  price: 1200,
-  discount: 5,
-  images: [
-    "/images/logo.png?height=600&width=800",
-    "/images/hotels/balandra.jpg?height=600&width=800",
-    "/images/hotels/tecolote.jpg?height=600&width=800",
-  ],
-  amenities: [
-    { name: "WiFi gratis", icon: Wifi },
-    { name: "Desayuno", icon: Coffee },
-    { name: "Estacionamiento", icon: Bed },
-    { name: "Aire acondicionado", icon: Bed },
-    { name: "Restaurante", icon: Bed },
-  ],
-  rooms: [
-    {
-      id: 1,
-      name: "Habitación Sencilla Estandar",
-      description: "Habitación cómoda con vistas a la ciudad",
-      price: 1850,
-      capacity: 2,
-      amenities: ["WiFi gratis", "TV", "Aire acondicionado", "Caja fuerte"],
-      image: "/images/logo.png",
-    },
-    {
-      id: 2,
-      name: "Habitación Doble Estandar",
-      description: "Espaciosa suite con sala de estar",
-      price: 2450,
-      capacity: 3,
-      amenities: ["WiFi gratis", "TV", "Jacuzzi", "Balcón", "Aire acondicionado", "Caja fuerte"],
-      image: "/images/logo.png",
-    },
-    {
-      id: 123, 
-      name: "Habitacion Suite ",
-      description: "Lujosa suite con sala de estar separada",
-      price: 3200,
-      capacity: 4,
-      amenities: ["WiFi gratis", "TV", "Refrigerador", "Balcón", "Jacuzzi", "Aire acondicionado", "Caja fuerte"],
-      image: "/images/logo.png",
-    },
-  ],
-}
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Label } from "@/components/ui/label";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Skeleton } from "@/components/ui/skeleton";
+import { getHotelById } from "@/lib/api/hoteles";
+import { Branch } from "@/types/hotel";
 
 export default function HotelDetailPage() {
-  const params = useParams()
-  const router = useRouter()
-  const [currentImageIndex, setCurrentImageIndex] = useState(0)
-  const [isFavorite, setIsFavorite] = useState(false)
-  const [date, setDate] = useState<Date | undefined>(new Date())
-  const [guests, setGuests] = useState({ adults: 2, children: 0 })
-  const [selectedRoom, setSelectedRoom] = useState<number | null>(null)
+  const params = useParams();
+  const router = useRouter();
+  const [hotel, setHotel] = useState<Branch | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [guests, setGuests] = useState({ adults: 2, children: 0 });
+  const [selectedRoom, setSelectedRoom] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchHotel = async () => {
+      try {
+        setIsLoading(true);
+        const data = await getHotelById(params.id as string);
+        setHotel(data);
+        setError(null);
+      } catch (err) {
+        setError("No se pudo cargar el hotel. Intenta de nuevo.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchHotel();
+  }, [params.id]);
 
   const handlePrevImage = () => {
-    setCurrentImageIndex((prev) => (prev === 0 ? branchData.images.length - 1 : prev - 1))
-  }
+    setCurrentImageIndex((prev) => (prev === 0 ? (hotel?.images?.length || 1) - 1 : prev - 1));
+  };
 
   const handleNextImage = () => {
-    setCurrentImageIndex((prev) => (prev === branchData.images.length - 1 ? 0 : prev + 1))
-  }
+    setCurrentImageIndex((prev) => (prev === (hotel?.images?.length || 1) - 1 ? 0 : prev + 1));
+  };
 
   const handleGuestChange = (type: "adults" | "children", operation: "increase" | "decrease") => {
     setGuests((prev) => {
-      const newValue = operation === "increase" ? prev[type] + 1 : prev[type] - 1
-
-      if (type === "adults" && (newValue < 1 || newValue > 10)) return prev
-      if (type === "children" && (newValue < 0 || newValue > 6)) return prev
-
-      return { ...prev, [type]: newValue }
-    })
-  }
+      const newValue = operation === "increase" ? prev[type] + 1 : prev[type] - 1;
+      if (type === "adults" && (newValue < 1 || newValue > 10)) return prev;
+      if (type === "children" && (newValue < 0 || newValue > 6)) return prev;
+      return { ...prev, [type]: newValue };
+    });
+  };
 
   const handleRoomSelect = (roomId: number) => {
-    setSelectedRoom(roomId === selectedRoom ? null : roomId)
-  }
+    setSelectedRoom(roomId === selectedRoom ? null : roomId);
+  };
 
   const handleReservation = () => {
-    if (!selectedRoom) return
+    if (!selectedRoom) return;
+    router.push(`/checkout?hotelId=${params.id}&roomId=${selectedRoom}&date=${date?.toISOString()}`);
+  };
 
-    // In a real app, you would navigate to a checkout page with the selected room and dates
-    router.push(`/checkout?hotelId=${params.id}&roomId=${selectedRoom}&date=${date?.toISOString()}`)
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container py-6 md:py-8">
+          <Skeleton className="h-8 w-1/2 mb-4" />
+          <Skeleton className="h-96 w-full rounded-lg mb-6" />
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="md:col-span-2 space-y-8">
+              <Skeleton className="h-6 w-1/4" />
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-6 w-1/4" />
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-6 w-1/4" />
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <Skeleton key={i} className="h-40 w-full rounded-lg" />
+                ))}
+              </div>
+            </div>
+            <div className="md:col-span-1">
+              <Skeleton className="h-96 w-full rounded-lg" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !hotel) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container py-6 md:py-8 text-center">
+          <p className="text-red-500">{error || "Hotel no encontrado"}</p>
+          <Button onClick={() => router.push("/hotels")} className="mt-4">
+            Volver a Hoteles
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -131,17 +135,17 @@ export default function HotelDetailPage() {
           </Link>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold">{branchData.name}</h1>
+              <h1 className="text-3xl font-bold">{hotel.name}</h1>
               <div className="flex items-center gap-2 mt-1">
                 <div className="flex items-center">
                   <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  <span className="text-sm font-medium ml-1">{branchData.rating}</span>
-                  <span className="text-sm text-muted-foreground ml-1">({branchData.reviews} reseñas)</span>
+                  <span className="text-sm font-medium ml-1">{hotel.rating}</span>
+                  <span className="text-sm text-muted-foreground ml-1">({hotel.reviews} reseñas)</span>
                 </div>
                 <span className="text-muted-foreground">•</span>
                 <div className="flex items-center text-muted-foreground text-sm">
                   <MapPin className="h-4 w-4 mr-1" />
-                  {branchData.location}
+                  {hotel.location}
                 </div>
               </div>
             </div>
@@ -163,8 +167,8 @@ export default function HotelDetailPage() {
         <div className="relative mb-8">
           <div className="relative h-[300px] md:h-[500px] overflow-hidden rounded-lg">
             <Image
-              src={branchData.images[currentImageIndex] || "/placeholder.svg"}
-              alt={`${branchData.name} - Imagen ${currentImageIndex + 1}`}
+              src={hotel.images[currentImageIndex] || "/placeholder.svg"}
+              alt={`${hotel.name} - Imagen ${currentImageIndex + 1}`}
               fill
               className="object-cover"
             />
@@ -187,7 +191,7 @@ export default function HotelDetailPage() {
               <span className="sr-only">Imagen siguiente</span>
             </Button>
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
-              {branchData.images.map((_, index) => (
+              {hotel.images.map((_, index) => (
                 <button
                   key={index}
                   className={`w-2 h-2 rounded-full ${index === currentImageIndex ? "bg-white" : "bg-white/50"}`}
@@ -205,14 +209,14 @@ export default function HotelDetailPage() {
             {/* Hotel Description */}
             <div>
               <h2 className="text-2xl font-bold mb-4">Acerca del hotel</h2>
-              <p className="text-muted-foreground">{branchData.description}</p>
+              <p className="text-muted-foreground">{hotel.description}</p>
             </div>
 
             {/* Amenities */}
             <div>
               <h2 className="text-2xl font-bold mb-4">Servicios</h2>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {branchData.amenities.map((amenity, index) => (
+                {hotel.amenities.map((amenity, index) => (
                   <div key={index} className="flex items-center gap-2">
                     <amenity.icon className="h-5 w-5 text-primary" />
                     <span>{amenity.name}</span>
@@ -225,7 +229,7 @@ export default function HotelDetailPage() {
             <div>
               <h2 className="text-2xl font-bold mb-4">Habitaciones disponibles</h2>
               <div className="space-y-4">
-                {branchData.rooms.map((room) => (
+                {hotel.rooms.map((room) => (
                   <Card
                     key={room.id}
                     className={`overflow-hidden ${selectedRoom === room.id ? "ring-2 ring-primary" : ""}`}
@@ -281,14 +285,13 @@ export default function HotelDetailPage() {
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
-                      className={`h-5 w-5 ${i < Math.floor(branchData.rating) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"}`}
+                      className={`h-5 w-5 ${i < Math.floor(hotel.rating) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"}`}
                     />
                   ))}
                 </div>
-                <span className="font-medium">{branchData.rating}</span>
-                <span className="text-muted-foreground">({branchData.reviews} reseñas)</span>
+                <span className="font-medium">{hotel.rating}</span>
+                <span className="text-muted-foreground">({hotel.reviews} reseñas)</span>
               </div>
-
               <Button variant="outline" className="w-full">
                 Ver todas las reseñas
               </Button>
@@ -384,7 +387,7 @@ export default function HotelDetailPage() {
                   <div className="flex justify-between mb-2">
                     <span>Precio por noche</span>
                     <span>
-                      ${selectedRoom ? branchData.rooms.find((r) => r.id === selectedRoom)?.price || 0 : 0} MXN
+                      ${selectedRoom ? hotel.rooms.find((r) => r.id === selectedRoom)?.price || 0 : 0} MXN
                     </span>
                   </div>
                   <div className="flex justify-between mb-2">
@@ -392,7 +395,7 @@ export default function HotelDetailPage() {
                     <span>
                       $
                       {selectedRoom
-                        ? Math.round((branchData.rooms.find((r) => r.id === selectedRoom)?.price || 0) * 0.16)
+                        ? Math.round((hotel.rooms.find((r) => r.id === selectedRoom)?.price || 0) * 0.16)
                         : 0}{" "}
                       MXN
                     </span>
@@ -403,7 +406,7 @@ export default function HotelDetailPage() {
                     <span>
                       $
                       {selectedRoom
-                        ? Math.round((branchData.rooms.find((r) => r.id === selectedRoom)?.price || 0) * 1.16)
+                        ? Math.round((hotel.rooms.find((r) => r.id === selectedRoom)?.price || 0) * 1.16)
                         : 0}{" "}
                       MXN
                     </span>
@@ -420,5 +423,5 @@ export default function HotelDetailPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
