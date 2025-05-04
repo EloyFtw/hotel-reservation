@@ -118,11 +118,11 @@ export default function FeaturedBranches() {
                 {branch.location}
               </div>
               <div className="flex flex-wrap gap-1 pt-1">
-                {branch.tags?.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="text-xs">
-                    {tag}
-                  </Badge>
-                ))}
+              {branch.tags?.map((tag, index) => (
+                <Badge key={`${branch.id}-${tag}-${index}`} variant="secondary" className="text-xs">
+                  {tag}
+                </Badge>            
+               ))}
               </div>
             </div>
           </CardContent>
