@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -13,6 +12,10 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+
+// Configuración de la URL del backend desde la variable de entorno
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
 
 export default function LoginPage() {
   const router = useRouter()
@@ -21,19 +24,59 @@ export default function LoginPage() {
     email: "",
     password: "",
   })
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+
+  // Validar que la URL del backend esté definida
+  if (!API_BASE_URL) {
+    console.error("Error: NEXT_PUBLIC_API_URL no está definida en .env.local")
+    setError("Error de configuración: La URL del servidor no está definida. Contacta al administrador.")
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
+    setError(null) // Limpiar error al cambiar cualquier campo
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Here you would normally authenticate the user
-    console.log("Login attempt with:", formData)
+    setError(null)
+    setIsLoading(true)
 
-    // For demo purposes, we'll just redirect to the dashboard
-    router.push("/dashboard")
+    if (!API_BASE_URL) {
+      setError("Error de configuración: La URL del servidor no está definida. Contacta al administrador.")
+      setIsLoading(false)
+      return
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/usuarios/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(
+          `Error ${response.status}: ${errorData.error || "Error al iniciar sesión"}`
+        )
+      }
+
+      const data = await response.json()
+      console.log("Login exitoso:", data)
+
+      // Redirigir al dashboard
+      router.push("/dashboard")
+    } catch (err: any) {
+      setError(err.message || "Ocurrió un error al iniciar sesión.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -47,6 +90,12 @@ export default function LoginPage() {
         <Card>
           <form onSubmit={handleSubmit}>
             <CardContent className="pt-6">
+              {error && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Correo electrónico</Label>
@@ -61,6 +110,7 @@ export default function LoginPage() {
                       value={formData.email}
                       onChange={handleChange}
                       required
+                      disabled={isLoading}
                     />
                   </div>
                 </div>
@@ -81,6 +131,7 @@ export default function LoginPage() {
                       value={formData.password}
                       onChange={handleChange}
                       required
+                      disabled={isLoading}
                     />
                     <Button
                       type="button"
@@ -88,6 +139,7 @@ export default function LoginPage() {
                       size="icon"
                       className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                       onClick={() => setShowPassword(!showPassword)}
+                      disabled={isLoading}
                     >
                       {showPassword ? (
                         <EyeOff className="h-4 w-4 text-muted-foreground" />
@@ -98,8 +150,8 @@ export default function LoginPage() {
                     </Button>
                   </div>
                 </div>
-                <Button type="submit" className="w-full">
-                  Iniciar Sesión
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
                 </Button>
               </div>
             </CardContent>
@@ -107,10 +159,10 @@ export default function LoginPage() {
           <div className="px-6 pb-6">
             <Separator className="my-4" />
             <div className="space-y-4">
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" disabled={isLoading}>
                 Continuar con Google
               </Button>
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" disabled={isLoading}>
                 Continuar con Facebook
               </Button>
               <div className="text-center text-sm">

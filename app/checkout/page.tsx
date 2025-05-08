@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
@@ -29,7 +28,7 @@ const hotelData = {
       id: 1,
       name: "Habitación Estándar",
       price: 1850,
-      capacity: 2,
+      capacity: 3,
     },
     {
       id: 2,
@@ -58,11 +57,41 @@ export default function CheckoutPage() {
   const checkInDate = dateParam ? new Date(dateParam) : new Date()
 
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    specialRequests: "",
+    guest: {
+      firstName: "",
+      lastNameP: "",
+      lastNameM: "",
+      phone: "",
+      email: "",
+      birthDate: "",
+      gender: "",
+      street: "",
+      neighborhood: "",
+      postalCode: "",
+      extNumber: "",
+      intNumber: "",
+      city: "",
+      state: "",
+      country: "",
+      specialRequests: "",
+    },
+    companions: Array.from({ length: 3 }, () => ({
+      firstName: "",
+      lastNameP: "",
+      lastNameM: "",
+      phone: "",
+      email: "",
+      birthDate: "",
+      gender: "",
+      street: "",
+      neighborhood: "",
+      postalCode: "",
+      extNumber: "",
+      intNumber: "",
+      city: "",
+      state: "",
+      country: "",
+    })),
     cardName: "",
     cardNumber: "",
     cardExpiry: "",
@@ -75,11 +104,27 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target as HTMLInputElement
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
-    }))
+    const { name, value, type } = e.target
+    if (name.startsWith("guest.")) {
+      const field = name.replace("guest.", "")
+      setFormData((prev) => ({
+        ...prev,
+        guest: { ...prev.guest, [field]: value },
+      }))
+    } else if (name.startsWith("companion.")) {
+      const [, field, indexStr] = name.split(".")
+      const index = parseInt(indexStr, 10)
+      setFormData((prev) => {
+        const updatedCompanions = [...prev.companions]
+        updatedCompanions[index] = { ...updatedCompanions[index], [field]: value }
+        return { ...prev, companions: updatedCompanions }
+      })
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
+      }))
+    }
   }
 
   const handleCheckboxChange = (name: string, checked: boolean) => {
@@ -91,11 +136,8 @@ export default function CheckoutPage() {
 
   const handleGenerateQuote = () => {
     setIsGeneratingQuote(true)
-
-    // Simulate PDF generation
     setTimeout(() => {
       setIsGeneratingQuote(false)
-      // In a real app, this would trigger a PDF download
       alert("Cotización generada. El PDF se descargará automáticamente.")
     }, 1500)
   }
@@ -108,9 +150,44 @@ export default function CheckoutPage() {
       return
     }
 
-    setIsProcessing(true)
+    // Validar acompañantes (si se llenaron, los campos requeridos deben estar completos)
+    const filledCompanions = formData.companions.filter(
+      (companion) =>
+        companion.firstName ||
+        companion.lastNameP ||
+        companion.lastNameM ||
+        companion.phone ||
+        companion.email ||
+        companion.birthDate ||
+        companion.gender ||
+        companion.street ||
+        companion.neighborhood ||
+        companion.postalCode ||
+        companion.extNumber ||
+        companion.intNumber ||
+        companion.city ||
+        companion.state ||
+        companion.country
+    )
+    for (const companion of filledCompanions) {
+      if (
+        !companion.firstName ||
+        !companion.lastNameP ||
+        !companion.birthDate ||
+        !companion.gender ||
+        !companion.street ||
+        !companion.neighborhood ||
+        !companion.postalCode ||
+        !companion.city ||
+        !companion.state ||
+        !companion.country
+      ) {
+        alert("Por favor completa todos los campos obligatorios de los acompañantes o déjalos vacíos.")
+        return
+      }
+    }
 
-    // Simulate payment processing
+    setIsProcessing(true)
     setTimeout(() => {
       setIsProcessing(false)
       router.push("/confirmation")
@@ -149,65 +226,417 @@ export default function CheckoutPage() {
                     </CardTitle>
                     <CardDescription>Ingrese los datos del huésped principal</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="firstName">Nombre</Label>
-                        <Input
-                          id="firstName"
-                          name="firstName"
-                          placeholder="Juan"
-                          value={formData.firstName}
-                          onChange={handleChange}
-                          required
-                        />
+                  <CardContent className="space-y-6">
+                    <div className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
+                      <p>
+                        <strong>Importante:</strong> Los datos proporcionados deben coincidir exactamente con su
+                        identificación oficial (INE, pasaporte, etc.), ya que serán validados al momento de su ingreso al
+                        hotel. En caso de no coincidir, la reserva no será válida y no se permitirá el acceso.
+                      </p>
+                    </div>
+
+                    {/* Datos personales */}
+                    <div className="space-y-4">
+                      <h4 className="font-medium">Datos Personales</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="guest.lastNameP">
+                            Apellido Paterno <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            id="guest.lastNameP"
+                            name="guest.lastNameP"
+                            placeholder="Pérez"
+                            value={formData.guest.lastNameP}
+                            onChange={handleChange}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="guest.lastNameM">Apellido Materno</Label>
+                          <Input
+                            id="guest.lastNameM"
+                            name="guest.lastNameM"
+                            placeholder="Gómez"
+                            value={formData.guest.lastNameM}
+                            onChange={handleChange}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="guest.firstName">
+                            Nombres <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            id="guest.firstName"
+                            name="guest.firstName"
+                            placeholder="Juan"
+                            value={formData.guest.firstName}
+                            onChange={handleChange}
+                            required
+                          />
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="lastName">Apellido</Label>
-                        <Input
-                          id="lastName"
-                          name="lastName"
-                          placeholder="Pérez"
-                          value={formData.lastName}
-                          onChange={handleChange}
-                          required
-                        />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="guest.phone">
+                            Celular <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            id="guest.phone"
+                            name="guest.phone"
+                            placeholder="+52 123 456 7890"
+                            value={formData.guest.phone}
+                            onChange={handleChange}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="guest.email">
+                            Correo electrónico <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            id="guest.email"
+                            name="guest.email"
+                            type="email"
+                            placeholder="juan@ejemplo.com"
+                            value={formData.guest.email}
+                            onChange={handleChange}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="guest.birthDate">
+                            Fecha de nacimiento <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            id="guest.birthDate"
+                            name="guest.birthDate"
+                            type="date"
+                            value={formData.guest.birthDate}
+                            onChange={handleChange}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="guest.gender">
+                            Sexo (H/M) <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            id="guest.gender"
+                            name="guest.gender"
+                            placeholder="H o M"
+                            value={formData.guest.gender}
+                            onChange={handleChange}
+                            required
+                          />
+                        </div>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Correo electrónico</Label>
-                        <Input
-                          id="email"
-                          name="email"
-                          type="email"
-                          placeholder="juan@ejemplo.com"
-                          value={formData.email}
-                          onChange={handleChange}
-                          required
-                        />
+
+                    {/* Dirección */}
+                    <div className="space-y-4">
+                      <h4 className="font-medium">Dirección</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="guest.street">
+                            Calles <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            id="guest.street"
+                            name="guest.street"
+                            placeholder="Av. Principal"
+                            value={formData.guest.street}
+                            onChange={handleChange}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="guest.neighborhood">
+                            Colonia <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            id="guest.neighborhood"
+                            name="guest.neighborhood"
+                            placeholder="Centro"
+                            value={formData.guest.neighborhood}
+                            onChange={handleChange}
+                            required
+                          />
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="phone">Teléfono</Label>
-                        <Input
-                          id="phone"
-                          name="phone"
-                          placeholder="+52 123 456 7890"
-                          value={formData.phone}
-                          onChange={handleChange}
-                          required
-                        />
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="guest.postalCode">
+                            Código postal <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            id="guest.postalCode"
+                            name="guest.postalCode"
+                            placeholder="12345"
+                            value={formData.guest.postalCode}
+                            onChange={handleChange}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="guest.extNumber">Número exterior</Label>
+                          <Input
+                            id="guest.extNumber"
+                            name="guest.extNumber"
+                            placeholder="123"
+                            value={formData.guest.extNumber}
+                            onChange={handleChange}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="guest.intNumber">Número interior</Label>
+                          <Input
+                            id="guest.intNumber"
+                            name="guest.intNumber"
+                            placeholder="A1"
+                            value={formData.guest.intNumber}
+                            onChange={handleChange}
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="guest.city">
+                            Ciudad <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            id="guest.city"
+                            name="guest.city"
+                            placeholder="La Paz"
+                            value={formData.guest.city}
+                            onChange={handleChange}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="guest.state">
+                            Estado <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            id="guest.state"
+                            name="guest.state"
+                            placeholder="Baja California Sur"
+                            value={formData.guest.state}
+                            onChange={handleChange}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="guest.country">
+                            País <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            id="guest.country"
+                            name="guest.country"
+                            placeholder="México"
+                            value={formData.guest.country}
+                            onChange={handleChange}
+                            required
+                          />
+                        </div>
                       </div>
                     </div>
+
+                    {/* Solicitudes especiales */}
                     <div className="space-y-2">
-                      <Label htmlFor="specialRequests">Solicitudes especiales (opcional)</Label>
+                      <Label htmlFor="guest.specialRequests">Solicitudes especiales (opcional)</Label>
                       <Textarea
-                        id="specialRequests"
-                        name="specialRequests"
+                        id="guest.specialRequests"
+                        name="guest.specialRequests"
                         placeholder="Ej: Habitación en piso alto, cama adicional, etc."
-                        value={formData.specialRequests}
+                        value={formData.guest.specialRequests}
                         onChange={handleChange}
                       />
+                    </div>
+
+                    {/* Sección para acompañantes */}
+                    <Separator />
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-5 w-5" />
+                        <h3 className="text-lg font-medium">Acompañantes (Opcional)</h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Puede agregar hasta {selectedRoom.capacity - 1} acompañante(s) para esta habitación. Los datos
+                        deben coincidir con su identificación oficial.
+                      </p>
+                      {formData.companions.slice(0, selectedRoom.capacity - 1).map((companion, index) => (
+                        <div key={index} className="space-y-4">
+                          <h4 className="font-medium">Acompañante {index + 1}</h4>
+                          {/* Datos personales */}
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor={`companion.lastNameP.${index}`}>Apellido Paterno</Label>
+                              <Input
+                                id={`companion.lastNameP.${index}`}
+                                name={`companion.lastNameP.${index}`}
+                                placeholder="Pérez"
+                                value={companion.lastNameP}
+                                onChange={handleChange}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`companion.lastNameM.${index}`}>Apellido Materno</Label>
+                              <Input
+                                id={`companion.lastNameM.${index}`}
+                                name={`companion.lastNameM.${index}`}
+                                placeholder="Gómez"
+                                value={companion.lastNameM}
+                                onChange={handleChange}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`companion.firstName.${index}`}>Nombres</Label>
+                              <Input
+                                id={`companion.firstName.${index}`}
+                                name={`companion.firstName.${index}`}
+                                placeholder="Juan"
+                                value={companion.firstName}
+                                onChange={handleChange}
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor={`companion.phone.${index}`}>Celular</Label>
+                              <Input
+                                id={`companion.phone.${index}`}
+                                name={`companion.phone.${index}`}
+                                placeholder="+52 123 456 7890"
+                                value={companion.phone}
+                                onChange={handleChange}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`companion.email.${index}`}>Correo electrónico</Label>
+                              <Input
+                                id={`companion.email.${index}`}
+                                name={`companion.email.${index}`}
+                                type="email"
+                                placeholder="juan@ejemplo.com"
+                                value={companion.email}
+                                onChange={handleChange}
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor={`companion.birthDate.${index}`}>Fecha de nacimiento</Label>
+                              <Input
+                                id={`companion.birthDate.${index}`}
+                                name={`companion.birthDate.${index}`}
+                                type="date"
+                                value={companion.birthDate}
+                                onChange={handleChange}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`companion.gender.${index}`}>Sexo (H/M)</Label>
+                              <Input
+                                id={`companion.gender.${index}`}
+                                name={`companion.gender.${index}`}
+                                placeholder="H o M"
+                                value={companion.gender}
+                                onChange={handleChange}
+                              />
+                            </div>
+                          </div>
+                          {/* Dirección */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor={`companion.street.${index}`}>Calles</Label>
+                              <Input
+                                id={`companion.street.${index}`}
+                                name={`companion.street.${index}`}
+                                placeholder="Av. Principal"
+                                value={companion.street}
+                                onChange={handleChange}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`companion.neighborhood.${index}`}>Colonia</Label>
+                              <Input
+                                id={`companion.neighborhood.${index}`}
+                                name={`companion.neighborhood.${index}`}
+                                placeholder="Centro"
+                                value={companion.neighborhood}
+                                onChange={handleChange}
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor={`companion.postalCode.${index}`}>Código postal</Label>
+                              <Input
+                                id={`companion.postalCode.${index}`}
+                                name={`companion.postalCode.${index}`}
+                                placeholder="12345"
+                                value={companion.postalCode}
+                                onChange={handleChange}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`companion.extNumber.${index}`}>Número exterior</Label>
+                              <Input
+                                id={`companion.extNumber.${index}`}
+                                name={`companion.extNumber.${index}`}
+                                placeholder="123"
+                                value={companion.extNumber}
+                                onChange={handleChange}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`companion.intNumber.${index}`}>Número interior</Label>
+                              <Input
+                                id={`companion.intNumber.${index}`}
+                                name={`companion.intNumber.${index}`}
+                                placeholder="A1"
+                                value={companion.intNumber}
+                                onChange={handleChange}
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor={`companion.city.${index}`}>Ciudad</Label>
+                              <Input
+                                id={`companion.city.${index}`}
+                                name={`companion.city.${index}`}
+                                placeholder="La Paz"
+                                value={companion.city}
+                                onChange={handleChange}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`companion.state.${index}`}>Estado</Label>
+                              <Input
+                                id={`companion.state.${index}`}
+                                name={`companion.state.${index}`}
+                                placeholder="Baja California Sur"
+                                value={companion.state}
+                                onChange={handleChange}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`companion.country.${index}`}>País</Label>
+                              <Input
+                                id={`companion.country.${index}`}
+                                name={`companion.country.${index}`}
+                                placeholder="México"
+                                value={companion.country}
+                                onChange={handleChange}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
