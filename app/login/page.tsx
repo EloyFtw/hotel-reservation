@@ -15,7 +15,7 @@ import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 // Configuración de la URL del backend desde la variable de entorno
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -26,12 +26,6 @@ export default function LoginPage() {
   })
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-
-  // Validar que la URL del backend esté definida
-  if (!API_BASE_URL) {
-    console.error("Error: NEXT_PUBLIC_API_URL no está definida en .env.local")
-    setError("Error de configuración: La URL del servidor no está definida. Contacta al administrador.")
-  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -44,8 +38,13 @@ export default function LoginPage() {
     setError(null)
     setIsLoading(true)
 
-    if (!API_BASE_URL) {
-      setError("Error de configuración: La URL del servidor no está definida. Contacta al administrador.")
+    if (!formData.email.trim()) {
+      setError("Por favor ingresa un correo electrónico.")
+      setIsLoading(false)
+      return
+    }
+    if (!formData.password.trim()) {
+      setError("Por favor ingresa una contraseña.")
       setIsLoading(false)
       return
     }
@@ -60,20 +59,26 @@ export default function LoginPage() {
         }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(
-          `Error ${response.status}: ${errorData.error || "Error al iniciar sesión"}`
-        )
+        throw new Error(data.error || "Error al iniciar sesión")
       }
 
-      const data = await response.json()
-      console.log("Login exitoso:", data)
+      if (!data.token) {
+        throw new Error("No se recibió un token en la respuesta")
+      }
 
-      // Redirigir al dashboard
+      // Guardar el token en localStorage
+      localStorage.setItem("token", data.token)
       router.push("/dashboard")
     } catch (err: any) {
-      setError(err.message || "Ocurrió un error al iniciar sesión.")
+      console.error("Error en el login:", err)
+      if (err.message.includes("Failed to fetch")) {
+        setError("No se pudo conectar con el servidor. Verifica que el servidor esté corriendo.")
+      } else {
+        setError(err.message || "Correo o contraseña incorrectos.")
+      }
     } finally {
       setIsLoading(false)
     }
