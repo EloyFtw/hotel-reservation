@@ -1,7 +1,7 @@
 'use client';
 
-import { Usuario, Reservation, FavoriteHotel, Ciudad, Hospedaje, Reservacion, Persona, FormData } from "./types";
-import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime"; // Cambiado a App Router
+import { Usuario, Reservation, FavoriteHotel, Ciudad, Reservacion, Persona, FormData } from "./types";
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
@@ -170,43 +170,25 @@ export const fetchReservations = async (
       throw new Error(`Error ${resResponse.status}: ${await resResponse.text()}`);
     }
     const reservaciones: Reservacion[] = await resResponse.json();
-    const hosResponse = await fetch(`${API_BASE_URL}/api/hospedajes/huesped/${huespedId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
-    if (!hosResponse.ok) {
-      throw new Error(`Error ${hosResponse.status}: ${await hosResponse.text()}`);
-    }
-    const hospedajes: Hospedaje[] = await hosResponse.json();
     const mappedReservations: Reservation[] = reservaciones.map((res) => {
-      const checkIn = new Date(res.HoraDeLlegada);
+      const checkIn = new Date(res.Fecha);
       const checkOut = new Date(checkIn);
-      checkOut.setDate(checkIn.getDate() + 1);
-      const hospedaje = hospedajes.find((h) => h.FK_Reservacion === res.ID_Reservacion);
-      const isHospedado = hospedaje && res.Estatus.Estatus.toLowerCase().includes("activo");
+      checkOut.setDate(checkIn.getDate() + 1); // Estimación, ya que no hay checkOut en Reservacion
       return {
         id: res.ID_Reservacion.toString(),
-        status: isHospedado
-          ? "confirmed"
-          : mapStatus(
-              res.Estatus.Estatus,
-              checkIn,
-              hospedaje?.Check_out ? new Date(hospedaje.Check_out) : undefined
-            ),
+        status: mapStatus(res.FK_Estatus, res.Estatus.Estatus),
         checkIn,
-        checkOut: hospedaje?.Check_out ? new Date(hospedaje.Check_out) : checkOut,
+        checkOut,
         hotel: {
           name: res.Hotel.Nombre,
           location: res.Hotel.Direccion,
           image: res.Hotel.URL_Imagen_Hotel || "/images/logo.png",
         },
         room: {
-          name: hospedaje ? `Habitación ${hospedaje.Habitacion.Numero}` : "Habitación Estándar",
-          price: hospedaje ? parseFloat(hospedaje.CostoNoche) : 0,
+          name: "Habitación Estándar", // Placeholder, ya que no hay datos de habitación en Reservacion
+          price: 0, // Placeholder
         },
-        totalAmount: hospedaje ? parseFloat(hospedaje.CostoTotal) : parseFloat(res.Monto_Usado) || 0,
+        totalAmount: parseFloat(res.Monto_Usado) || 0,
       };
     });
     setReservations(mappedReservations);
@@ -231,18 +213,15 @@ export const fetchFavoriteHotels = async (
     if (!token) {
       throw new Error("No se encontró el token de autenticación");
     }
-
     const response = await fetch(`${API_BASE_URL}/api/favoritos/${huespedId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
     });
-
     if (!response.ok) {
       throw new Error(`Error ${response.status}: ${await response.text()}`);
     }
-
     const favoritos: FavoriteHotel[] = await response.json();
     setFavoriteHotels(favoritos);
   } catch (err: any) {
@@ -363,19 +342,15 @@ export const fetchCiudades = async (
   }
 };
 
-export const mapStatus = (estatus: string, checkIn: Date, checkOut?: Date): string => {
-  const now = new Date();
-  if (estatus.toLowerCase().includes("in-activo")) {
-    return "completed";
+export const mapStatus = (estatusId: number, estatus: string): string => {
+  switch (estatusId) {
+    case 3:
+      return "confirmed"; // FK_Estatus: 3 es "Confirmado"
+    case 4:
+      return "completed"; // FK_Estatus: 4 es "In-activo" (Completado/Hospedado)
+    case 7:
+      return "cancelled"; // FK_Estatus: 7 es "Cancelado"
+    default:
+      return estatus.toLowerCase(); // Por si hay otros estatus no mapeados
   }
-  if (estatus.toLowerCase().includes("activo")) {
-    if (checkIn > now) {
-      return "upcoming";
-    }
-    if (checkOut && checkOut < now) {
-      return "completed";
-    }
-    return "confirmed";
-  }
-  return "completed";
 };

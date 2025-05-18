@@ -6,7 +6,7 @@ export interface Ciudad {
 }
 
 export interface Hotel {
-  ID_Hotel: number;
+  Id_Hotel: number;
   Nombre: string;
   FK_Ciudad: number;
   Ciudad?: Ciudad; // Opcional, en caso de que no se incluya,

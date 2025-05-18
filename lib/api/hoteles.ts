@@ -2,7 +2,7 @@ import axios from 'axios';
 import { Branch, Hotel } from '@/types/hotel';
 
 // Configura la URL base desde la variable de entorno
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 // Datos estáticos para amenidades
 const STATIC_AMENITIES = [
@@ -18,7 +18,7 @@ export const getHoteles = async (): Promise<Branch[]> => {
   try {
     const response = await axios.get<Hotel[]>(`${API_URL}/api/hoteles`);
     return response.data.map((hotel) => ({
-      id: hotel.ID_Hotel,
+      id: hotel.Id_Hotel,
       name: hotel.Nombre,
       location: `${hotel.Direccion}, ${hotel.Ciudad?.Ciudad}, ${hotel.Ciudad?.Estado}, ${hotel.Ciudad?.Pais}`,
       description: 'Descripción genérica del hotel.',
@@ -50,7 +50,7 @@ export const getHotelById = async (id: string): Promise<Branch> => {
     const tiposHabitacion = tiposHabitacionResponse.data;
 
     return {
-      id: hotel.ID_Hotel,
+      id: hotel.Id_Hotel,
       name: hotel.Nombre,
       location: `${hotel.Direccion}, ${hotel.Ciudad?.Ciudad}, ${hotel.Ciudad?.Estado}, ${hotel.Ciudad?.Pais}`,
       description: 'Disfruta de unas vacaciones de lujo en este hotel con vistas panorámicas.',

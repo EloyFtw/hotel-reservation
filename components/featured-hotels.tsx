@@ -133,6 +133,7 @@ export default function FeaturedBranches() {
                 ${branch.price} <span className="text-sm font-normal">MXN/noche</span>
               </p>
             </div>
+
             <Link href={`/hotels/${branch.id}`}>
               <Button size="sm">Ver Detalles</Button>
             </Link>
