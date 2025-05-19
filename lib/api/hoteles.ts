@@ -7,8 +7,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 // Datos estáticos para amenidades
 const STATIC_AMENITIES = [
   { name: 'WiFi gratis', icon: require('lucide-react').Wifi },
-  { name: 'Desayuno', icon: require('lucide-react').Coffee },
-  { name: 'Estacionamiento', icon: require('lucide-react').Bed },
+  { name: 'Estacio|namiento', icon: require('lucide-react').Bed },
   { name: 'Aire acondicionado', icon: require('lucide-react').Bed },
   { name: 'Restaurante', icon: require('lucide-react').Bed },
 ];
@@ -53,10 +52,10 @@ export const getHotelById = async (id: string): Promise<Branch> => {
       id: hotel.Id_Hotel,
       name: hotel.Nombre,
       location: `${hotel.Direccion}, ${hotel.Ciudad?.Ciudad}, ${hotel.Ciudad?.Estado}, ${hotel.Ciudad?.Pais}`,
-      description: 'Disfruta de unas vacaciones de lujo en este hotel con vistas panorámicas.',
+      description: hotel.Detalle || 'Descripción genérica del hotel.',
       rating: 5.0,
       reviews: 1,
-      price: 1200,
+      price: 850,
       discount: 5,
       image: '/images/logo.png',
       images: [
@@ -72,7 +71,7 @@ export const getHotelById = async (id: string): Promise<Branch> => {
         description: tipo.Descripcion || 'Habitación cómoda con servicios básicos',
         price: parseFloat(tipo.Tarifa) || 1000,
         capacity: (tipo.Cant_Adultos || 2) + (tipo.Cant_Niños || 0),
-        amenities: ['WiFi gratis', 'TV', 'Aire acondicionado'],
+        amenities: hotel.Tags || [],
         image: '/images/logo.png',
       })),
     };

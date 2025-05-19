@@ -26,19 +26,19 @@ const hotelData = {
   rooms: [
     {
       id: 1,
-      name: "Habitación Estándar",
+      name: "Sencilla Estándar",
       price: 1850,
       capacity: 3,
     },
     {
       id: 2,
-      name: "Suite Junior",
+      name: "Doble Estándar",
       price: 2450,
       capacity: 3,
     },
     {
       id: 3,
-      name: "Suite Ejecutiva",
+      name: "Triple Estándar",
       price: 3200,
       capacity: 4,
     },

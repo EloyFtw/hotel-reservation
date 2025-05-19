@@ -99,14 +99,9 @@ export default function PdfGeneratorPage() {
                       <SelectValue placeholder="Selecciona una sucursal" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Hotel Del Ángel - Centro">Hotel Del Ángel - Cancún</SelectItem>
-                      <SelectItem value="Hotel Del Ángel - Cabo">
-                        Hotel Del Ángel - Cabo
-                      </SelectItem>
-                      <SelectItem value="Hotel Del Ángel - Puerto Vallarta">
-                        Hotel Del Ángel - Centro
-                      </SelectItem>
-                      <SelectItem value="Hotel Del Ángel - Valle de Bravo">Hotel Del Ángel - Valle de Bravo</SelectItem>
+                      <SelectItem value="Hotel Del Ángel - Centro">Hotel Del Ángel - La Paz</SelectItem>
+                      <SelectItem value="Hotel Del Ángel - Cabo"> Hotel Del Ángel - Cabo San Lucas  </SelectItem>                      
+                    
                     </SelectContent>
                   </Select>
                 </div>
@@ -117,10 +112,8 @@ export default function PdfGeneratorPage() {
                       <SelectValue placeholder="Selecciona un tipo de habitación" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Habitación Estándar">Habitación Estándar</SelectItem>
-                      <SelectItem value="Suite Junior">Suite Junior</SelectItem>
-                      <SelectItem value="Suite Ejecutiva">Suite Ejecutiva</SelectItem>
-                      <SelectItem value="Suite Presidencial">Suite Presidencial</SelectItem>
+                      <SelectItem value="Sencilla Estándar">Habitación Estándar</SelectItem>
+                      <SelectItem value="Doble Estandar">Doble Estandar</SelectItem>                    
                     </SelectContent>
                   </Select>
                 </div>

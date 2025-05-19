@@ -11,6 +11,7 @@ export interface Hotel {
   FK_Ciudad: number;
   Ciudad?: Ciudad; // Opcional, en caso de que no se incluya,
   Direccion: string;
+  Detalle: string;
   Tags?: string[]; // Opcional, en caso de que no se incluya
   
 }
