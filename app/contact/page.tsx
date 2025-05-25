@@ -1,8 +1,8 @@
+
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Building, Mail, MapPin, Phone } from "lucide-react"
@@ -15,6 +15,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
+
 export default function ContactPage() {
   const [formData, setFormData] = useState({
     name: "",
@@ -26,6 +28,40 @@ export default function ContactPage() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem("token")
+      if (!token) {
+        setIsAuthenticated(false)
+        return
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/usuarios/me`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        })
+
+        if (response.ok) {
+          setIsAuthenticated(true)
+        } else {
+          setIsAuthenticated(false)
+          localStorage.removeItem("token") // Limpiar token inválido
+        }
+      } catch (err) {
+        console.warn("Error al validar sesión:", err)
+        setIsAuthenticated(false)
+        localStorage.removeItem("token") // Limpiar token en caso de error
+      }
+    }
+
+    checkAuth()
+  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -84,14 +120,22 @@ export default function ContactPage() {
             </Link>
           </nav>
           <div className="flex items-center gap-4">
-            <Link href="/login">
-              <Button variant="outline" size="sm">
-                Iniciar Sesión
-              </Button>
-            </Link>
-            <Link href="/register">
-              <Button size="sm">Registrarse</Button>
-            </Link>
+            {isAuthenticated ? (
+              <Link href="/dashboard">
+                <Button size="sm">Dashboard</Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button variant="outline" size="sm">
+                    Iniciar Sesión
+                  </Button>
+                </Link>
+                <Link href="/register">
+                  <Button size="sm">Registrarse</Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>

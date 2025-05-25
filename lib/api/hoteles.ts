@@ -7,7 +7,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 // Datos estáticos para amenidades
 const STATIC_AMENITIES = [
   { name: 'WiFi gratis', icon: require('lucide-react').Wifi },
-  { name: 'Estacio|namiento', icon: require('lucide-react').Bed },
+  { name: 'Estacionamiento', icon: require('lucide-react').Bed },
   { name: 'Aire acondicionado', icon: require('lucide-react').Bed },
   { name: 'Restaurante', icon: require('lucide-react').Bed },
 ];

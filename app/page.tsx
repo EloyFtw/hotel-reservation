@@ -1,3 +1,6 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { CalendarDays, CreditCard, FileText, MapPin, Search, Users } from "lucide-react"
@@ -8,7 +11,44 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import FeaturedBranches from "@/components/featured-hotels"
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
+
 export default function HomePage() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem("token")
+      if (!token) {
+        setIsAuthenticated(false)
+        return
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/usuarios/me`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        })
+
+        if (response.ok) {
+          setIsAuthenticated(true)
+        } else {
+          setIsAuthenticated(false)
+          localStorage.removeItem("token") // Limpiar token inválido
+        }
+      } catch (err) {
+        console.warn("Error al validar sesión:", err)
+        setIsAuthenticated(false)
+        localStorage.removeItem("token") // Limpiar token en caso de error
+      }
+    }
+
+    checkAuth()
+  }, [])
+
   return (
     <div className="flex flex-col min-h-screen">
       <header className="bg-white border-b sticky top-0 z-10">
@@ -31,14 +71,22 @@ export default function HomePage() {
             </Link>
           </nav>
           <div className="flex items-center gap-4">
-            <Link href="/login">
-              <Button variant="outline" size="sm">
-                Iniciar Sesión
-              </Button>
-            </Link>
-            <Link href="/register">
-              <Button size="sm">Registrarse</Button>
-            </Link>
+            {isAuthenticated ? (
+              <Link href="/dashboard">
+                <Button size="sm">Dashboard</Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button variant="outline" size="sm">
+                    Iniciar Sesión
+                  </Button>
+                </Link>
+                <Link href="/register">
+                  <Button size="sm">Registrarse</Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -63,9 +111,9 @@ export default function HomePage() {
                       Buscar Sucursales
                     </Button>
                   </Link>
-                  <Link href="/register">
+                  <Link href={isAuthenticated ? "/dashboard" : "/register"}>
                     <Button size="lg" variant="outline">
-                      Crear Cuenta
+                      {isAuthenticated ? "Dashboard" : "Crear Cuenta"}
                     </Button>
                   </Link>
                 </div>

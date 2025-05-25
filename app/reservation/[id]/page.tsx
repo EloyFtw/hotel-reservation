@@ -8,7 +8,6 @@ import {
   AlertCircle,
   ArrowLeft,
   Calendar,
-  Check,
   Clock,
   CreditCard,
   FileText,
@@ -19,7 +18,6 @@ import {
   Phone,
   Printer,
   Share,
-  Star,
   User,
   X,
 } from "lucide-react"
@@ -32,143 +30,201 @@ import { Textarea } from "@/components/ui/textarea"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
-// Datos de muestra para diferentes tipos de reservaciones
-const reservationData = {
-  // Reservación cancelada
-  "3411": {
-    id: "3411",
-    status: "cancelled",
-    createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
-    cancelledAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-    cancellationReason: "Cambio de planes de viaje",
-    refundAmount: 1200,
-    checkIn: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-    checkOut: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    hotel: {
-      name: "Hotel Del Ángel - Cancún",
-      location: "Cancún, México",
-      image: "/placeholder.svg?height=300&width=500",
-    },
-    room: {
-      name: "Habitación Estándar",
-      price: 1850,
-      capacity: 2,
-    },
-    guest: {
-      name: "Carlos Rodríguez",
-      email: "carlos@ejemplo.com",
-      phone: "+52 123 456 7890",
-    },
-    totalAmount: 5550,
-    paymentMethod: "Tarjeta de crédito",
-  },
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
 
-  // Reservación completada
-  "3047": {
-    id: "3047",
-    status: "completed",
-    createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000),
-    checkIn: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-    checkOut: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-    actualCheckIn: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000), // 2 horas después
-    actualCheckOut: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000 - 1 * 60 * 60 * 1000), // 1 hora antes
-    hotel: {
-      name: "Hotel Del Ángel Abasolo",
-      location: "Laz Paz, México",
-      image: "/placeholder.svg?height=300&width=500",
-    },
-    room: {
-      name: "Doble Estandar",
-      price: 1200,
-      capacity: 3,
-      number: "304",
-      floor: 3,
-    },
-    guest: {
-      name: "Ana López",
-      email: "ana@ejemplo.com",
-      phone: "+52 987 654 3210",
-      additionalGuests: ["Juan López", "María López"],
-    },
-    totalAmount: 12250,
-    paymentMethod: "Tarjeta de crédito",
-    stayDetails: {
-      services: ["Desayuno incluido", "Estacionamiento", "Wi-Fi"],
-      incidents: [
-        {
-          date: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
-          description: "Solicitud de toallas adicionales",
-          resolved: true,
-        },
-        {
-          date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-          description: "Problema con el aire acondicionado",
-          resolved: true,
-        },
-      ],
-      feedback: {
-        rating: 4.5,
-        comment:
-          "Excelente servicio, habitación muy cómoda. El único detalle fue el aire acondicionado que falló un día, pero lo solucionaron rápidamente.",
-      },
-    },
-  },
+const getToken = () => localStorage.getItem("token")
 
-  // Reservación próxima
-  "4100": {
-    id: "4100",
-    status: "upcoming",
-    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-    checkIn: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
-    checkOut: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
-    hotel: {
-      name: "Hotel Del Ángel Abasolo",
-      location: "La Paz, México",
-      image: "/placeholder.svg?height=300&width=500",
-    },
-    room: {
-      name: "Suite Ejecutiva",
-      price: 3200,
-      capacity: 4,
-      number: "501",
-      floor: 5,
-    },
-    guest: {
-      name: "Miguel Hernández",
-      email: "miguel@ejemplo.com",
-      phone: "+52 555 123 4567",
-      additionalGuests: ["Laura Hernández", "Daniel Hernández"],
-    },
-    totalAmount: 18560,
-    paymentMethod: "Transferencia bancaria",
-    policies: [
-      "Check-in a partir de las 14:00 hrs",
-      "Check-out hasta las 12:00 hrs",
-      "Se requiere identificación oficial con fotografía",
-      "No se permiten mascotas",
-      "Política de cancelación: gratuita hasta 48 horas antes de la llegada",
-    ],
-    importantInfo: [
-      "Todas las habitaciones son para no fumadores",
-      "Hay estacionamiento gratuito disponible",
-      "El desayuno está incluido en su tarifa",
-    ],
-  },
+const mapStatus = (estatusId: number, estatus: string): string => {
+  switch (estatusId) {
+    case 3:
+      return "confirmed"
+    case 4:
+      return "completed"
+    case 7:
+      return "cancelled"
+    default:
+      return estatus.toLowerCase()
+  }
+}
+
+interface Room {
+  number: string
+  floor: number
+  price: number
+  nights: number
+}
+
+interface Reservation {
+  id: string
+  status: string
+  createdAt: Date
+  checkIn: Date
+  checkOut: Date
+  hotel: {
+    name: string
+    location: string
+    image: string
+  }
+  rooms: Room[]
+  guest: {
+    name: string
+    email: string
+    phone: string
+  }
+  totalAmount: number
+  paymentMethod: string
+  cancellationReason?: string
+  cancelledAt?: Date | null
+  policies: string[]
+  importantInfo: string[]
+  stayDetails: {
+    services: string[]
+    incidents: any[]
+    feedback: any | null
+  }
 }
 
 export default function ReservationDetailPage() {
   const params = useParams()
   const reservationId = params.id as string
-  const [reservation, setReservation] = useState<any>(null)
+  const [reservation, setReservation] = useState<Reservation | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [comment, setComment] = useState("")
 
   useEffect(() => {
-    // Simulamos la carga de datos
-    setTimeout(() => {
-      setReservation(reservationData["4100"] || reservationData["4100"])
-      setLoading(false)
-    }, 500)
+    const fetchReservation = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const token = getToken()
+        if (!token) {
+          throw new Error("No se encontró el token de autenticación")
+        }
+
+        // Fetch reservación (para hotel y estatus)
+        const reservationResponse = await fetch(`${API_BASE_URL}/api/reservaciones/${reservationId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        })
+        if (!reservationResponse.ok) {
+          throw new Error(`Error ${reservationResponse.status}: ${await reservationResponse.text()}`)
+        }
+        const reservationData = await reservationResponse.json()
+
+        // Fetch datos del huésped desde /api/huespedes
+        let guestData = null
+        try {
+          const huespedId = reservationData.Huesped.Id_Huesped
+          const huespedResponse = await fetch(`${API_BASE_URL}/api/huespedes/${huespedId}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          })
+          if (huespedResponse.ok) {
+            guestData = await huespedResponse.json()
+          }
+        } catch (err) {
+          console.warn("Error al obtener datos del huésped:", err)
+        }
+
+        // Fetch hospedaje (para fechas, habitación, costos)
+        let hospedaje = null
+        try {
+          const hospedajeResponse = await fetch(`${API_BASE_URL}/api/hospedajes/reservaciones/${reservationId}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          })
+          if (hospedajeResponse.ok) {
+            const hospedajeData = await hospedajeResponse.json()
+            hospedaje = Array.isArray(hospedajeData) && hospedajeData.length > 0 ? hospedajeData[0] : null
+          }
+        } catch (err) {
+          console.warn("No se encontraron datos de hospedaje:", err)
+        }
+
+        // Calcular checkOut si no hay hospedaje
+        const nights = hospedaje?.Cantidad_noches || 1
+        const checkInDate = hospedaje ? new Date(hospedaje.Check_in) : new Date(reservationData.HoraDeLlegada)
+        const checkOutDate = hospedaje
+          ? new Date(hospedaje.Check_out)
+          : new Date(new Date(reservationData.HoraDeLlegada).setDate(checkInDate.getDate() + nights))
+
+        // Construir nombre completo del huésped
+        const guestName = guestData?.persona
+          ? [
+              guestData.persona.Nombre,
+              guestData.persona.SegundoNombre,
+              guestData.persona.Apellido_Paterno,
+              guestData.persona.Apellido_Materno,
+            ]
+              .filter(Boolean)
+              .join(" ")
+          : `Huésped ID ${reservationData.Huesped.Id_Huesped}`
+
+        setReservation({
+          id: reservationData.ID_Reservacion.toString(),
+          status: mapStatus(reservationData.FK_Estatus, reservationData.Estatus.Estatus),
+          createdAt: new Date(reservationData.FechaAlta),
+          checkIn: checkInDate,
+          checkOut: checkOutDate,
+          hotel: {
+            name: reservationData.Hotel.Nombre,
+            location: reservationData.Hotel.Direccion,
+            image: reservationData.Hotel.URL_Imagen_Hotel || "/images/logo.png",
+          },
+          rooms: hospedaje
+            ? [{
+                number: hospedaje.Habitacion.Numero,
+                floor: hospedaje.Habitacion.Planta,
+                price: parseFloat(hospedaje.CostoNoche),
+                nights: hospedaje.Cantidad_noches,
+              }]
+            : [{
+                number: "No asignada",
+                floor: 0,
+                price: 0,
+                nights: 1,
+              }],
+          guest: {
+            name: guestName,
+            email: guestData?.persona?.Correo || reservationData.Hotel.correo || "correo@noespecificado.com",
+            phone: guestData?.persona?.Celular || reservationData.Hotel.telefono || "No disponible",
+          },
+          totalAmount: hospedaje ? parseFloat(hospedaje.CostoTotal) : 0,
+          paymentMethod: "No especificado",
+          cancellationReason: reservationData.Motivo_Cancelacion || "No disponible",
+          cancelledAt: reservationData.Motivo_Cancelacion ? new Date() : null,
+          policies: [
+            "Check-in a partir de las 15:00 hrs",
+            "Check-out hasta las 12:00 hrs",
+            "No se permiten mascotas",
+          ],
+          importantInfo: [
+            "Habitaciones para no fumadores",
+            "Estacionamiento disponible",
+          ],
+          stayDetails: {
+            services: reservationData.Hotel.Tags || [],
+            incidents: [],
+            feedback: null,
+          },
+        })
+      } catch (err: any) {
+        console.error("Error al cargar reservación:", err)
+        setError(err.message || "Error al cargar los detalles de la reserva")
+        setReservation(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchReservation()
   }, [reservationId])
 
   const handlePrint = () => {
@@ -192,7 +248,7 @@ export default function ReservationDetailPage() {
     )
   }
 
-  if (!reservation) {
+  if (error || !reservation) {
     return (
       <div className="min-h-screen bg-background">
         <div className="container py-6 md:py-8">
@@ -208,7 +264,7 @@ export default function ReservationDetailPage() {
                 </div>
                 <h2 className="text-2xl font-bold mb-2">Reservación no encontrada</h2>
                 <p className="text-muted-foreground mb-6">
-                  No pudimos encontrar los detalles de la reservación que estás buscando.
+                  {error || "No pudimos encontrar los detalles de la reservación que estás buscando."}
                 </p>
                 <Link href="/dashboard">
                   <Button>Ver mis reservaciones</Button>
@@ -221,21 +277,20 @@ export default function ReservationDetailPage() {
     )
   }
 
-  // Renderizado condicional según el estado de la reservación
   return (
     <div className="min-h-screen bg-background">
       <div className="container py-6 md:py-8">
         <div className="max-w-4xl mx-auto">
           <Link href="/dashboard" className="flex items-center text-muted-foreground hover:text-foreground mb-4">
             <ArrowLeft className="h-4 w-4 mr-1" />
-            Volver a mis reservaciones
+            Volver a las reservaciones
           </Link>
 
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
             <div>
               <h1 className="text-3xl font-bold">Reservación #{reservation.id}</h1>
               <div className="flex items-center gap-2 mt-1">
-                {reservation.status === "upcoming" && <Badge className="bg-blue-500 hover:bg-blue-600">Próxima</Badge>}
+                {reservation.status === "confirmed" && <Badge className="bg-green-500 hover:bg-green-600">Confirmada</Badge>}
                 {reservation.status === "completed" && <Badge variant="outline">Completada</Badge>}
                 {reservation.status === "cancelled" && <Badge variant="destructive">Cancelada</Badge>}
                 <span className="text-sm text-muted-foreground">
@@ -259,7 +314,6 @@ export default function ReservationDetailPage() {
             </div>
           </div>
 
-          {/* Contenido específico según el estado */}
           {reservation.status === "cancelled" && <CancelledReservation reservation={reservation} />}
 
           {reservation.status === "completed" && (
@@ -271,24 +325,25 @@ export default function ReservationDetailPage() {
             />
           )}
 
-          {reservation.status === "upcoming" && <UpcomingReservation reservation={reservation} />}
+          {reservation.status === "confirmed" && <UpcomingReservation reservation={reservation} />}
         </div>
       </div>
     </div>
   )
 }
 
-// Componente para reservaciones canceladas
-function CancelledReservation({ reservation }: { reservation: any }) {
+function CancelledReservation({ reservation }: { reservation: Reservation }) {
   return (
     <div className="space-y-6">
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Reservación Cancelada</AlertTitle>
-        <AlertDescription>
-          Esta reservación fue cancelada el {reservation.cancelledAt.toLocaleDateString()}.
-        </AlertDescription>
-      </Alert>
+      {reservation.cancellationReason !== "No disponible" && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Reservación Cancelada</AlertTitle>
+          <AlertDescription>
+            Esta reservación fue cancelada{reservation.cancelledAt ? ` el ${reservation.cancelledAt.toLocaleDateString()}` : ""}.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Card>
         <CardHeader>
@@ -302,7 +357,7 @@ function CancelledReservation({ reservation }: { reservation: any }) {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Monto reembolsado</p>
-              <p className="font-medium">${reservation.refundAmount} MXN</p>
+              <p className="font-medium">No disponible</p>
             </div>
           </div>
         </CardContent>
@@ -316,7 +371,7 @@ function CancelledReservation({ reservation }: { reservation: any }) {
           <div className="flex gap-4">
             <div className="relative w-24 h-24 rounded-md overflow-hidden shrink-0">
               <Image
-                src={reservation.hotel.image || "/placeholder.svg"}
+                src={reservation.hotel.image}
                 alt={reservation.hotel.name}
                 fill
                 className="object-cover"
@@ -328,7 +383,11 @@ function CancelledReservation({ reservation }: { reservation: any }) {
                 <MapPin className="h-3.5 w-3.5 mr-1" />
                 {reservation.hotel.location}
               </div>
-              <p className="mt-1">{reservation.room.name}</p>
+              <p className="mt-1">
+                {reservation.rooms.map((room, index) => (
+                  <span key={index}>Habitación {room.number}, Planta {room.floor}</span>
+                ))}
+              </p>
             </div>
           </div>
 
@@ -336,11 +395,11 @@ function CancelledReservation({ reservation }: { reservation: any }) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <p className="text-sm text-muted-foreground">Fecha de llegada (planificada)</p>
+              <p className="text-sm text-muted-foreground">Fecha de llegada</p>
               <p className="font-medium">{reservation.checkIn.toLocaleDateString()}</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Fecha de salida (planificada)</p>
+              <p className="text-sm text-muted-foreground">Fecha de salida</p>
               <p className="font-medium">{reservation.checkOut.toLocaleDateString()}</p>
             </div>
           </div>
@@ -368,11 +427,11 @@ function CancelledReservation({ reservation }: { reservation: any }) {
           <Separator />
 
           <div>
-            <h4 className="font-medium mb-2">Detalles del Pago</h4>
+            <h4 className="font-medium mb-2">Detalles de la factura</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Monto total</p>
-                <p className="font-medium">${reservation.totalAmount} MXN</p>
+                <p className="font-medium">${reservation.totalAmount.toFixed(2)} MXN</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Método de pago</p>
@@ -383,7 +442,7 @@ function CancelledReservation({ reservation }: { reservation: any }) {
         </CardContent>
         <CardFooter>
           <p className="text-sm text-muted-foreground">
-            Si necesitas más información sobre esta cancelación, por favor contacta a nuestro servicio al cliente.
+            Contacta al equipo de soporte para más información sobre esta cancelación.
           </p>
         </CardFooter>
       </Card>
@@ -391,21 +450,20 @@ function CancelledReservation({ reservation }: { reservation: any }) {
   )
 }
 
-// Componente para reservaciones completadas
 function CompletedReservation({
   reservation,
   comment,
   setComment,
   handleAddComment,
 }: {
-  reservation: any
+  reservation: Reservation
   comment: string
   setComment: (value: string) => void
   handleAddComment: () => void
 }) {
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>Detalles de la Estancia</CardTitle>
           <CardDescription>
@@ -417,7 +475,7 @@ function CompletedReservation({
           <div className="flex gap-4">
             <div className="relative w-24 h-24 rounded-md overflow-hidden shrink-0">
               <Image
-                src={reservation.hotel.image || "/placeholder.svg"}
+                src={reservation.hotel.image}
                 alt={reservation.hotel.name}
                 fill
                 className="object-cover"
@@ -430,7 +488,9 @@ function CompletedReservation({
                 {reservation.hotel.location}
               </div>
               <p className="mt-1">
-                {reservation.room.name} - Habitación {reservation.room.number}, Piso {reservation.room.floor}
+                {reservation.rooms.map((room, index) => (
+                  <span key={index}>Habitación {room.number}, Planta {room.floor} ({room.nights} noche{room.nights > 1 ? "s" : ""})</span>
+                ))}
               </p>
             </div>
           </div>
@@ -439,21 +499,21 @@ function CompletedReservation({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <p className="text-sm text-muted-foreground">Check-in real</p>
+              <p className="text-sm text-muted-foreground">Check-in</p>
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
-                <span>{reservation.actualCheckIn.toLocaleDateString()}</span>
+                <span>{reservation.checkIn.toLocaleDateString()}</span>
                 <Clock className="h-4 w-4 ml-2 mr-1 text-muted-foreground" />
-                <span>{reservation.actualCheckIn.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                <span>{reservation.checkIn.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
               </div>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Check-out real</p>
+              <p className="text-sm text-muted-foreground">Check-out</p>
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
-                <span>{reservation.actualCheckOut.toLocaleDateString()}</span>
+                <span>{reservation.checkOut.toLocaleDateString()}</span>
                 <Clock className="h-4 w-4 ml-2 mr-1 text-muted-foreground" />
-                <span>{reservation.actualCheckOut.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                <span>{reservation.checkOut.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
               </div>
             </div>
           </div>
@@ -467,17 +527,22 @@ function CompletedReservation({
                 <User className="h-4 w-4 mr-2 text-primary" />
                 <span className="font-medium">Huésped principal: {reservation.guest.name}</span>
               </div>
-              {reservation.guest.additionalGuests && reservation.guest.additionalGuests.length > 0 && (
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Acompañantes:</p>
-                  <ul className="list-disc list-inside pl-4">
-                    {reservation.guest.additionalGuests.map((guest: string, index: number) => (
-                      <li key={index} className="text-sm">
-                        {guest}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div>
+            <h4 className="font-medium mb-2">Servicios Disponibles</h4>
+            <div className="flex flex-wrap gap-2">
+              {reservation.stayDetails?.services?.length > 0 ? (
+                reservation.stayDetails.services.map((service: string, index: number) => (
+                  <Badge key={index} variant="secondary">
+                    {service}
+                  </Badge>
+                ))
+              ) : (
+                <p className="text-muted-foreground">No se especificaron servicios.</p>
               )}
             </div>
           </div>
@@ -485,78 +550,20 @@ function CompletedReservation({
           <Separator />
 
           <div>
-            <h4 className="font-medium mb-2">Servicios Utilizados</h4>
-            <div className="flex flex-wrap gap-2">
-              {reservation.stayDetails.services.map((service: string, index: number) => (
-                <Badge key={index} variant="secondary">
-                  {service}
-                </Badge>
-              ))}
-            </div>
-          </div>
-
-          <Separator />
-
-          <div>
-            <h4 className="font-medium mb-2">Incidencias Durante la Estancia</h4>
-            {reservation.stayDetails.incidents.length > 0 ? (
-              <div className="space-y-3">
-                {reservation.stayDetails.incidents.map((incident: any, index: number) => (
-                  <div key={index} className="flex items-start gap-2 bg-muted p-3 rounded-md">
-                    {incident.resolved ? (
-                      <Check className="h-5 w-5 text-green-500 mt-0.5" />
-                    ) : (
-                      <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5" />
-                    )}
-                    <div>
-                      <p className="font-medium">{incident.description}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {incident.date.toLocaleDateString()} - {incident.resolved ? "Resuelto" : "Pendiente"}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground">No se reportaron incidencias durante la estancia.</p>
-            )}
+            <h4 className="font-medium mb-2">Incidencias</h4>
+            <p className="text-muted-foreground">No se reportaron incidencias durante la estancia.</p>
           </div>
 
           <Separator />
 
           <div>
             <h4 className="font-medium mb-2">Valoración del Huésped</h4>
-            {reservation.stayDetails.feedback ? (
-              <div className="space-y-2">
-                <div className="flex items-center">
-                  <div className="flex mr-2">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`h-5 w-5 ${
-                          i < Math.floor(reservation.stayDetails.feedback.rating)
-                            ? "fill-yellow-400 text-yellow-400"
-                            : i < reservation.stayDetails.feedback.rating
-                              ? "fill-yellow-400 text-yellow-400 fill-opacity-50"
-                              : "text-muted-foreground"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <span className="font-medium">{reservation.stayDetails.feedback.rating}</span>
-                </div>
-                <div className="bg-muted p-3 rounded-md">
-                  <p className="italic">{reservation.stayDetails.feedback.comment}</p>
-                </div>
-              </div>
-            ) : (
-              <p className="text-muted-foreground">No hay valoración disponible.</p>
-            )}
+            <p className="text-muted-foreground">No hay valoración disponible.</p>
           </div>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>Añadir Comentario</CardTitle>
           <CardDescription>¿Tienes algún comentario adicional sobre esta estancia?</CardDescription>
@@ -574,7 +581,7 @@ function CompletedReservation({
         </CardFooter>
       </Card>
 
-      <Card>
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>Detalles del Pago</CardTitle>
         </CardHeader>
@@ -582,7 +589,7 @@ function CompletedReservation({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-muted-foreground">Monto total</p>
-              <p className="font-medium">${reservation.totalAmount} MXN</p>
+              <p className="font-medium">${reservation.totalAmount.toFixed(2)} MXN</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Método de pago</p>
@@ -599,23 +606,21 @@ function CompletedReservation({
   )
 }
 
-// Componente para reservaciones próximas
-function UpcomingReservation({ reservation }: { reservation: any }) {
+function UpcomingReservation({ reservation }: { reservation: Reservation }) {
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>Detalles de la Reservación</CardTitle>
           <CardDescription>
-            Reservación para el {reservation.checkIn.toLocaleDateString()} al{" "}
-            {reservation.checkOut.toLocaleDateString()}
+            Reservación para el {reservation.checkIn.toLocaleDateString()} hasta {reservation.checkOut.toLocaleDateString()}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex gap-4">
             <div className="relative w-24 h-24 rounded-md overflow-hidden shrink-0">
               <Image
-                src={reservation.hotel.image || "/placeholder.svg"}
+                src={reservation.hotel.image}
                 alt={reservation.hotel.name}
                 fill
                 className="object-cover"
@@ -628,7 +633,9 @@ function UpcomingReservation({ reservation }: { reservation: any }) {
                 {reservation.hotel.location}
               </div>
               <p className="mt-1">
-                {reservation.room.name} - Habitación {reservation.room.number}, Piso {reservation.room.floor}
+                {reservation.rooms.map((room, index) => (
+                  <span key={index}>Habitación {room.number}, Planta {room.floor} ({room.nights} noche{room.nights > 1 ? "s" : ""})</span>
+                ))}
               </p>
             </div>
           </div>
@@ -642,7 +649,7 @@ function UpcomingReservation({ reservation }: { reservation: any }) {
                 <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
                 <span>{reservation.checkIn.toLocaleDateString()}</span>
                 <Clock className="h-4 w-4 ml-2 mr-1 text-muted-foreground" />
-                <span>A partir de las 15:00</span>
+                <span>{reservation.checkIn.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
               </div>
             </div>
             <div>
@@ -651,7 +658,7 @@ function UpcomingReservation({ reservation }: { reservation: any }) {
                 <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
                 <span>{reservation.checkOut.toLocaleDateString()}</span>
                 <Clock className="h-4 w-4 ml-2 mr-1 text-muted-foreground" />
-                <span>Hasta las 12:00</span>
+                <span>{reservation.checkOut.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
               </div>
             </div>
           </div>
@@ -665,18 +672,6 @@ function UpcomingReservation({ reservation }: { reservation: any }) {
                 <User className="h-4 w-4 mr-2 text-primary" />
                 <span className="font-medium">Huésped principal: {reservation.guest.name}</span>
               </div>
-              {reservation.guest.additionalGuests && reservation.guest.additionalGuests.length > 0 && (
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Huéspedes adicionales:</p>
-                  <ul className="list-disc list-inside pl-4">
-                    {reservation.guest.additionalGuests.map((guest: string, index: number) => (
-                      <li key={index} className="text-sm">
-                        {guest}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
             </div>
           </div>
 
@@ -698,7 +693,7 @@ function UpcomingReservation({ reservation }: { reservation: any }) {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>Código QR de Reservación</CardTitle>
           <CardDescription>Presenta este código al momento de hacer check-in</CardDescription>
@@ -721,7 +716,7 @@ function UpcomingReservation({ reservation }: { reservation: any }) {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>Políticas del Hotel</CardTitle>
         </CardHeader>
@@ -757,7 +752,7 @@ function UpcomingReservation({ reservation }: { reservation: any }) {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>Detalles del Pago</CardTitle>
         </CardHeader>
@@ -765,7 +760,7 @@ function UpcomingReservation({ reservation }: { reservation: any }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-muted-foreground">Monto total</p>
-              <p className="font-medium">${reservation.totalAmount} MXN</p>
+              <p className="font-medium">${reservation.totalAmount.toFixed(2)} MXN</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Método de pago</p>
