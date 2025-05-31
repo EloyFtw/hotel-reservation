@@ -84,6 +84,28 @@ export default function HotelDetailPage() {
     router.push(`/checkout?hotelId=${params.id}&roomId=${selectedRoom}&date=${date?.toISOString()}`);
   };
 
+  // Calcular desglose de impuestos para la tarjeta de reserva
+  const getPriceBreakdown = () => {
+    if (!selectedRoom || !hotel) {
+      return { basePrice: 0, iva: 0, ish: 0, total: 0 };
+    }
+    const totalPrice = hotel.rooms.find((r) => r.id === selectedRoom)?.price || 0;
+    // Precio base = totalPrice / (1 + 0.16 + 0.04)
+    const basePrice = totalPrice / 1.2;
+    // IVA = basePrice * 16%
+    const iva = basePrice * 0.16;
+    // ISH = basePrice * 4%
+    const ish = basePrice * 0.04;
+    return {
+      basePrice: Number(basePrice.toFixed(2)),
+      iva: Number(iva.toFixed(2)),
+      ish: Number(ish.toFixed(2)),
+      total: Number(totalPrice.toFixed(2)),
+    };
+  };
+
+  const { basePrice, iva, ish, total } = getPriceBreakdown();
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -386,30 +408,20 @@ export default function HotelDetailPage() {
                 <div className="pt-4">
                   <div className="flex justify-between mb-2">
                     <span>Precio por noche</span>
-                    <span>
-                      ${selectedRoom ? hotel.rooms.find((r) => r.id === selectedRoom)?.price || 0 : 0} MXN
-                    </span>
+                    <span>${basePrice} MXN</span>
                   </div>
                   <div className="flex justify-between mb-2">
-                    <span>Impuestos y cargos</span>
-                    <span>
-                      $
-                      {selectedRoom
-                        ? Math.round((hotel.rooms.find((r) => r.id === selectedRoom)?.price || 0) * 0.16)
-                        : 0}{" "}
-                      MXN
-                    </span>
+                    <span>IVA (16%)</span>
+                    <span>${iva} MXN</span>
+                  </div>
+                  <div className="flex justify-between mb-2">
+                    <span>ISH (4%)</span>
+                    <span>${ish} MXN</span>
                   </div>
                   <Separator className="my-2" />
                   <div className="flex justify-between font-bold">
                     <span>Total</span>
-                    <span>
-                      $
-                      {selectedRoom
-                        ? Math.round((hotel.rooms.find((r) => r.id === selectedRoom)?.price || 0) * 1.16)
-                        : 0}{" "}
-                      MXN
-                    </span>
+                    <span>${total} MXN</span>
                   </div>
                 </div>
               </CardContent>
