@@ -16,36 +16,61 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { getHotelById } from "@/lib/api/hoteles"
+import { Branch, Ciudad } from "@/types/hotel"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
 
-// Mock data for checkout
-const hotelData = {
-  id: 1,
-  name: "Hotel Del Ángel Abasolo",
-  location: "La Paz, México",
-  image: "/images/logo.png?height=300&width=500",
-  rooms: [
-    {
-      id: 1,
-      name: "Sencilla Estándar",
-      price: 1850,
-      capacity: 3,
-    },
-    {
-      id: 2,
-      name: "Doble Estándar",
-      price: 2450,
-      capacity: 3,
-    },
-    {
-      id: 3,
-      name: "Triple Estándar",
-      price: 3200,
-      capacity: 4,
-    },
-  ],
+interface Persona {
+  Nombre: string
+  Apellido_Paterno: string
+  Apellido_Materno: string
+  Celular: string | null
+  Correo: string
+  Fecha_Nacimiento: string
+  Sex: "H" | "M"
+  Direccion: string | null
+  Ciudad: Ciudad
+}
+
+interface Huesped {
+  Id_Huesped: number
+  persona: Persona
+}
+
+interface Usuario {
+  Id_Usuario: number
+  huesped: Huesped | null
+}
+
+interface Companion {
+  firstName: string
+  lastNameP: string
+  lastNameM: string
+  phone: string
+  email: string
+  birthDate: string
+  gender: string
+  street: string
+  neighborhood: string
+  postalCode: string
+  extNumber: string
+  intNumber: string
+  city: string
+  state: string
+  country: string
+  specialRequests?: string
+}
+
+interface FormData {
+  guest: Companion
+  companions: Companion[]
+  cardName: string
+  cardNumber: string
+  cardExpiry: string
+  cardCvc: string
+  saveCard: boolean
+  termsAccepted: boolean
 }
 
 export default function CheckoutPage() {
@@ -56,10 +81,15 @@ export default function CheckoutPage() {
   const roomId = searchParams.get("roomId")
   const dateParam = searchParams.get("date")
 
-  const selectedRoom = hotelData.rooms.find((room) => room.id.toString() === roomId) || hotelData.rooms[0]
-  const checkInDate = dateParam ? new Date(dateParam) : new Date()
+  const [hotel, setHotel] = useState<Branch | null>(null)
+  const [isHotelLoading, setIsHotelLoading] = useState(true)
+  const [hotelError, setHotelError] = useState<string | null>(null)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isUserLoading, setIsUserLoading] = useState(true)
+  const [user, setUser] = useState<Usuario | null>(null)
+  const [submissionError, setSubmissionError] = useState<string | null>(null)
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     guest: {
       firstName: "",
       lastNameP: "",
@@ -103,18 +133,39 @@ export default function CheckoutPage() {
     termsAccepted: false,
   })
 
+  const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({})
   const [isGeneratingQuote, setIsGeneratingQuote] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
 
-  // Check session on mount
+  // Fetch hotel data
   useEffect(() => {
-    const checkAuth = async () => {
+    const fetchHotel = async () => {
+      if (!hotelId) {
+        setHotelError("ID de hotel no proporcionado")
+        setIsHotelLoading(false)
+        return
+      }
+      try {
+        setIsHotelLoading(true)
+        const data = await getHotelById(hotelId)
+        setHotel(data)
+        setHotelError(null)
+      } catch (err) {
+        setHotelError("No se pudo cargar el hotel. Intenta de nuevo.")
+      } finally {
+        setIsHotelLoading(false)
+      }
+    }
+    fetchHotel()
+  }, [hotelId])
+
+  // Check authentication and fetch user
+  useEffect(() => {
+    const checkAuthAndFetchUser = async () => {
       const token = localStorage.getItem("token")
       if (!token) {
         setIsAuthenticated(false)
-        setIsLoading(false)
+        setIsUserLoading(false)
         return
       }
 
@@ -128,118 +179,112 @@ export default function CheckoutPage() {
         })
 
         if (response.ok) {
+          const userData: Usuario = await response.json()
           setIsAuthenticated(true)
+          setUser(userData)
         } else {
           setIsAuthenticated(false)
-          localStorage.removeItem("token") // Clear invalid token
+          setUser(null)
+          localStorage.removeItem("token")
         }
       } catch (err) {
-        console.warn("Error al validar sesión:", err)
+        console.warn("Error al validar sesión o cargar usuario:", err)
         setIsAuthenticated(false)
-        localStorage.removeItem("token") // Clear token on error
+        setUser(null)
+        localStorage.removeItem("token")
       } finally {
-        setIsLoading(false)
+        setIsUserLoading(false)
       }
     }
 
-    checkAuth()
+    checkAuthAndFetchUser()
   }, [])
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target
-    if (name.startsWith("guest.")) {
-      const field = name.replace("guest.", "")
+  // Populate guest data from user
+  useEffect(() => {
+    if (user?.huesped?.persona) {
+      const { persona } = user.huesped
+      const [street = "", neighborhood = "", postalCode = "", intNumber = "", extNumber = ""] =
+        persona.Direccion ? persona.Direccion.split(";") : []
+      const birthDate = persona.Fecha_Nacimiento
+        ? new Date(persona.Fecha_Nacimiento).toISOString().split("T")[0]
+        : ""
+
       setFormData((prev) => ({
         ...prev,
-        guest: { ...prev.guest, [field]: value },
-      }))
-    } else if (name.startsWith("companion.")) {
-      const [, field, indexStr] = name.split(".")
-      const index = parseInt(indexStr, 10)
-      setFormData((prev) => {
-        const updatedCompanions = [...prev.companions]
-        updatedCompanions[index] = { ...updatedCompanions[index], [field]: value }
-        return { ...prev, companions: updatedCompanions }
-      })
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
+        guest: {
+          ...prev.guest,
+          firstName: persona.Nombre || "",
+          lastNameP: persona.Apellido_Paterno || "",
+          lastNameM: persona.Apellido_Materno || "",
+          phone: persona.Celular || "",
+          email: persona.Correo || "",
+          birthDate,
+          gender: persona.Sex || "",
+          street,
+          neighborhood,
+          postalCode,
+          extNumber,
+          intNumber,
+          city: persona.Ciudad.Ciudad || "",
+          state: persona.Ciudad.Estado || "",
+          country: persona.Ciudad.Pais || "",
+        },
       }))
     }
-  }
+  }, [user])
 
-  const handleCheckboxChange = (name: string, checked: boolean) => {
-    setFormData((prev) => ({
-      ...prev,
-      [name]: checked,
-    }))
-  }
-
-  const handleGenerateQuote = () => {
-    setIsGeneratingQuote(true)
-    setTimeout(() => {
-      setIsGeneratingQuote(false)
-      alert("Cotización generada. El PDF se descargará automáticamente.")
-    }, 1500)
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!formData.termsAccepted) {
-      alert("Debes aceptar los términos y condiciones para continuar.")
-      return
-    }
-
-    const filledCompanions = formData.companions.filter(
-      (companion) =>
-        companion.firstName ||
-        companion.lastNameP ||
-        companion.lastNameM ||
-        companion.phone ||
-        companion.email ||
-        companion.birthDate ||
-        companion.gender ||
-        companion.street ||
-        companion.neighborhood ||
-        companion.postalCode ||
-        companion.extNumber ||
-        companion.intNumber ||
-        companion.city ||
-        companion.state ||
-        companion.country
+  // Validate query parameters
+  if (!hotelId || !roomId || !dateParam || isNaN(new Date(dateParam).getTime())) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <header className="bg-white border-b sticky top-0 z-10">
+          <div className="container flex h-16 items-center justify-between px-4 md:px-6">
+            <Link href="/" className="flex items-center gap-2">
+              <Image src="/images/logo.png" alt="Hotel Del Ángel" width={150} height={60} />
+            </Link>
+            <nav className="hidden md:flex gap-6">
+              <Link href="/" className="text-sm font-medium hover:underline underline-offset-4">
+                Inicio
+              </Link>
+              <Link href="/hotels" className="text-sm font-medium hover:underline underline-offset-4">
+                Sucursales
+              </Link>
+              <Link href="/about" className="text-sm font-medium hover:underline underline-offset-4">
+                Nosotros
+              </Link>
+              <Link href="/contact" className="text-sm font-medium hover:underline underline-offset-4">
+                Contacto
+              </Link>
+            </nav>
+            <div className="flex items-center gap-4">
+              <Link href="/login">
+                <Button variant="outline" size="sm">
+                  Iniciar Sesión
+                </Button>
+              </Link>
+              <Link href="/register">
+                <Button size="sm">Registrarse</Button>
+              </Link>
+            </div>
+          </div>
+        </header>
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-red-500">Parámetros de reserva inválidos.</p>
+            <Link href="/hotels">
+              <Button className="mt-4">Volver a Hoteles</Button>
+            </Link>
+          </div>
+        </main>
+      </div>
     )
-    for (const companion of filledCompanions) {
-      if (
-        !companion.firstName ||
-        !companion.lastNameP ||
-        !companion.birthDate ||
-        !companion.gender ||
-        !companion.street ||
-        !companion.neighborhood ||
-        !companion.postalCode ||
-        !companion.city ||
-        !companion.state ||
-        !companion.country
-      ) {
-        alert("Por favor completa todos los campos obligatorios de los acompañantes o déjalos vacíos.")
-        return
-      }
-    }
-
-    setIsProcessing(true)
-    setTimeout(() => {
-      setIsProcessing(false)
-      router.push("/confirmation")
-    }, 2000)
   }
 
-  const roomPrice = selectedRoom.price
-  const taxAmount = Math.round(roomPrice * 0.16)
-  const totalAmount = roomPrice + taxAmount
+  const checkInDate = new Date(dateParam)
 
-  if (isLoading) {
+  // Handle loading state
+  if (isHotelLoading || isUserLoading) {
     return (
       <div className="flex flex-col min-h-screen">
         <header className="bg-white border-b sticky top-0 z-10">
@@ -279,6 +324,295 @@ export default function CheckoutPage() {
       </div>
     )
   }
+
+  // Handle error state or invalid hotel
+  if (hotelError || !hotel) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <header className="bg-white border-b sticky top-0 z-10">
+          <div className="container flex h-16 items-center justify-between px-4 md:px-6">
+            <Link href="/" className="flex items-center gap-2">
+              <Image src="/images/logo.png" alt="Hotel Del Ángel" width={150} height={60} />
+            </Link>
+            <nav className="hidden md:flex gap-6">
+              <Link href="/" className="text-sm font-medium hover:underline underline-offset-4">
+                Inicio
+              </Link>
+              <Link href="/hotels" className="text-sm font-medium hover:underline underline-offset-4">
+                Sucursales
+              </Link>
+              <Link href="/about" className="text-sm font-medium hover:underline underline-offset-4">
+                Nosotros
+              </Link>
+              <Link href="/contact" className="text-sm font-medium hover:underline underline-offset-4">
+                Contacto
+              </Link>
+            </nav>
+            <div className="flex items-center gap-4">
+              <Link href="/login">
+                <Button variant="outline" size="sm">
+                  Iniciar Sesión
+                </Button>
+              </Link>
+              <Link href="/register">
+                <Button size="sm">Registrarse</Button>
+              </Link>
+            </div>
+          </div>
+        </header>
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-red-500">{hotelError || "Hotel no encontrado"}</p>
+            <Link href="/hotels">
+              <Button className="mt-4">Volver a Hoteles</Button>
+            </Link>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  const selectedRoom = hotel.rooms.find((room) => room.id.toString() === roomId)
+  if (!selectedRoom) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <header className="bg-white border-b sticky top-0 z-10">
+          <div className="container flex h-16 items-center justify-between px-4 md:px-6">
+            <Link href="/" className="flex items-center gap-2">
+              <Image src="/images/logo.png" alt="Hotel Del Ángel" width={150} height={60} />
+            </Link>
+            <nav className="hidden md:flex gap-6">
+              <Link href="/" className="text-sm font-medium hover:underline underline-offset-4">
+                Inicio
+              </Link>
+              <Link href="/hotels" className="text-sm font-medium hover:underline underline-offset-4">
+                Sucursales
+              </Link>
+              <Link href="/about" className="text-sm font-medium hover:underline underline-offset-4">
+                Nosotros
+              </Link>
+              <Link href="/contact" className="text-sm font-medium hover:underline underline-offset-4">
+                Contacto
+              </Link>
+            </nav>
+            <div className="flex items-center gap-4">
+              <Link href="/login">
+                <Button variant="outline" size="sm">
+                  Iniciar Sesión
+                </Button>
+              </Link>
+              <Link href="/register">
+                <Button size="sm">Registrarse</Button>
+              </Link>
+            </div>
+          </div>
+        </header>
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-red-500">Habitación no encontrada.</p>
+            <Link href={`/hotels/${hotelId}`}>
+              <Button className="mt-4">Volver al Hotel</Button>
+            </Link>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const { name, value, type } = e.target
+
+    if (name === "guest.gender") {
+      const upperValue = typeof value === "string" ? value.toUpperCase() : ""
+      if (upperValue === "" || upperValue === "H" || upperValue === "M") {
+        setFormData((prev) => ({
+          ...prev,
+          guest: { ...prev.guest, gender: upperValue },
+        }))
+        setFormErrors((prev) => ({ ...prev, "guest.gender": "" }))
+      } else {
+        setFormErrors((prev) => ({ ...prev, "guest.gender": "Solo se permite H o M" }))
+      }
+      return
+    }
+
+    if (name.startsWith("companion.")) {
+      const [, field, indexStr] = name.split(".")
+      const index = parseInt(indexStr, 10)
+      if (isNaN(index) || index < 0 || index >= formData.companions.length) return
+      if (field === "gender") {
+        const upperValue = typeof value === "string" ? value.toUpperCase() : ""
+        if (upperValue === "" || upperValue === "H" || upperValue === "M") {
+          setFormData((prev) => {
+            const updatedCompanions = [...prev.companions]
+            updatedCompanions[index] = { ...updatedCompanions[index], gender: upperValue }
+            return { ...prev, companions: updatedCompanions }
+          })
+          setFormErrors((prev) => ({ ...prev, [`companion.gender.${index}`]: "" }))
+        } else {
+          setFormErrors((prev) => ({ ...prev, [`companion.gender.${index}`]: "Solo se permite H o M" }))
+        }
+        return
+      }
+      setFormData((prev) => {
+        const updatedCompanions = [...prev.companions]
+        updatedCompanions[index] = { ...updatedCompanions[index], [field]: value }
+        return { ...prev, companions: updatedCompanions }
+      })
+    } else if (name.startsWith("guest.")) {
+      const field = name.replace("guest.", "")
+      setFormData((prev) => ({
+        ...prev,
+        guest: { ...prev.guest, [field]: value },
+      }))
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
+      }))
+    }
+  }
+
+  const handleCheckboxChange = (name: "saveCard" | "termsAccepted", checked: boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      [name]: checked,
+    }))
+  }
+
+  const handleGenerateQuote = () => {
+    setIsGeneratingQuote(true)
+    setTimeout(() => {
+      setIsGeneratingQuote(false)
+      alert("Cotización generada. El PDF se descargará automáticamente.")
+    }, 1500)
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    const errors: { [key: string]: string } = {}
+    if (!["H", "M"].includes(formData.guest.gender)) {
+      errors["guest.gender"] = "El sexo debe ser H o M"
+    }
+
+    if (!formData.termsAccepted) {
+      errors.termsAccepted = "Debes aceptar los términos y condiciones"
+    }
+
+    const filledCompanions = formData.companions.filter((companion) =>
+      Object.values(companion).some((value) => value !== "")
+    )
+
+    filledCompanions.forEach((companion, index) => {
+      const isPartiallyFilled = Object.values(companion).some((value) => value !== "")
+      if (isPartiallyFilled) {
+        if (!companion.firstName) errors[`companion.firstName.${index}`] = "Requerido"
+        if (!companion.lastNameP) errors[`companion.lastNameP.${index}`] = "Requerido"
+        if (!companion.birthDate) errors[`companion.birthDate.${index}`] = "Requerido"
+        if (companion.gender && !["H", "M"].includes(companion.gender))
+          errors[`companion.gender.${index}`] = "El sexo debe ser H o M"
+        if (!companion.street) errors[`companion.street.${index}`] = "Requerido"
+        if (!companion.neighborhood) errors[`companion.neighborhood.${index}`] = "Requerido"
+        if (!companion.postalCode) errors[`companion.postalCode.${index}`] = "Requerido"
+        if (!companion.city) errors[`companion.city.${index}`] = "Requerido"
+        if (!companion.state) errors[`companion.state.${index}`] = "Requerido"
+        if (!companion.country) errors[`companion.country.${index}`] = "Requerido"
+      }
+    })
+
+    setFormErrors(errors)
+    if (Object.keys(errors).length > 0) {
+      alert("Por favor corrige los errores en el formulario.")
+      return
+    }
+
+    setIsProcessing(true)
+    setSubmissionError(null)
+
+    try {
+      const token = localStorage.getItem("token")
+      if (!token) {
+        throw new Error("No se encontró el token de autenticación")
+      }
+
+      if (!user?.huesped?.Id_Huesped || isNaN(user.huesped.Id_Huesped)) {
+        throw new Error("ID del huésped inválido")
+      }
+
+      // Crear reservación
+      const reservacionResponse = await fetch(`${API_BASE_URL}/api/reservaciones`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          FK_Huesped: user.huesped.Id_Huesped,
+          HoraDeLlegada: new Date(`${checkInDate.toISOString().split("T")[0]}T20:00:00.000Z`).toISOString(),
+          Fecha: checkInDate.toISOString().split("T")[0],
+          En_Corte: false,
+          Preferencias: formData.guest.specialRequests || "",
+          FK_Turno: null,
+          FK_Estatus: 3,
+          FK_UserAlta: user.Id_Usuario,
+          FechaAlta: new Date(),
+          FK_UserModif: null,
+          FechaModificacion: null,
+          FK_Hotel: parseInt(hotelId!),
+          Motivo_Cancelacion: null,
+          Monto_Usado: 0.00,
+        }),
+      })
+
+      if (!reservacionResponse.ok) {
+        const errorData = await reservacionResponse.json()
+        throw new Error(errorData.details || "Error al crear la reservación")
+      }
+
+      const reservacion = await reservacionResponse.json()
+
+      // Crear reservación de habitación
+      const reservacionHabitacionResponse = await fetch(`${API_BASE_URL}/api/reservacionHabitaciones`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          FK_Reservacion: reservacion.id,
+          FK_Habitacion: null,
+          FK_CAT_Tipo_Habitacion: selectedRoom.id,
+          Cant_Noches: 1,
+          FK_Estatus_Habitacion: "Pendiente",
+          Monto_Asignado: 0,
+          Tarifa: totalPrice,
+          Costo: totalPrice,
+        }),
+      })
+
+      if (!reservacionHabitacionResponse.ok) {
+        const errorData = await reservacionHabitacionResponse.json()
+        throw new Error(errorData.details || "Error al crear la reservación de habitación")
+      }
+
+      // Redirigir a confirmación
+      router.push("/confirmation")
+    } catch (error) {
+      console.error("Error al procesar la reserva:", error)
+      setSubmissionError(errors.message || "Error al procesar la reserva. Intenta de nuevo.")
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  // Calculate price breakdown
+  const totalPrice = selectedRoom.price
+  const basePrice = totalPrice / 1.2 // Remove IVA (16%) and ISH (4%)
+  const iva = basePrice * 0.16
+  const ish = basePrice * 0.04
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -332,7 +666,8 @@ export default function CheckoutPage() {
                     Inicia sesión o regístrate para continuar
                   </h1>
                   <p className="mx-auto max-w-[600px] text-muted-foreground md:text-xl/relaxed">
-                    Para completar tu reserva, necesitas una cuenta. Inicia sesión si ya tienes una o regístrate para crear una nueva.
+                    Para completar tu reserva, necesitas una cuenta. Inicia sesión si ya tienes una o regístrate para
+                    crear una nueva.
                   </p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4">
@@ -362,6 +697,12 @@ export default function CheckoutPage() {
               <p className="text-muted-foreground">Complete sus datos para confirmar su reserva</p>
             </div>
 
+            {submissionError && (
+              <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-lg">
+                {submissionError}
+              </div>
+            )}
+
             <div className="grid md:grid-cols-3 gap-8">
               <div className="md:col-span-2">
                 <form onSubmit={handleSubmit}>
@@ -378,8 +719,9 @@ export default function CheckoutPage() {
                         <div className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
                           <p>
                             <strong>Importante:</strong> Los datos proporcionados deben coincidir exactamente con su
-                            identificación oficial (INE, pasaporte, etc.), ya que serán validados al momento de su ingreso al
-                            hotel. En caso de no coincidir, la reserva no será válida y no se permitirá el acceso.
+                            identificación oficial (INE, pasaporte, etc.), ya que serán validados al momento de su
+                            ingreso al hotel. En caso de no coincidir, la reserva no será válida y no se permitirá el
+                            acceso.
                           </p>
                         </div>
 
@@ -476,8 +818,12 @@ export default function CheckoutPage() {
                                 placeholder="H o M"
                                 value={formData.guest.gender}
                                 onChange={handleChange}
+                                maxLength={1}
                                 required
                               />
+                              {formErrors["guest.gender"] && (
+                                <p className="text-red-500 text-sm">{formErrors["guest.gender"]}</p>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -596,7 +942,7 @@ export default function CheckoutPage() {
                             id="guest.specialRequests"
                             name="guest.specialRequests"
                             placeholder="Ej: Habitación en piso alto, cama adicional, etc."
-                            value={formData.guest.specialRequests}
+                            value={formData.guest.specialRequests || ""}
                             onChange={handleChange}
                           />
                         </div>
@@ -608,8 +954,8 @@ export default function CheckoutPage() {
                             <h3 className="text-lg font-medium">Acompañantes (Opcional)</h3>
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            Puede agregar hasta {selectedRoom.capacity - 1} acompañante(s) para esta habitación. Los datos
-                            deben coincidir con su identificación oficial.
+                            Puede agregar hasta {selectedRoom.capacity - 1} acompañante(s) para esta habitación. Los
+                            datos deben coincidir con su identificación oficial.
                           </p>
                           {formData.companions.slice(0, selectedRoom.capacity - 1).map((companion, index) => (
                             <div key={index} className="space-y-4">
@@ -624,6 +970,9 @@ export default function CheckoutPage() {
                                     value={companion.lastNameP}
                                     onChange={handleChange}
                                   />
+                                  {formErrors[`companion.lastNameP.${index}`] && (
+                                    <p className="text-red-500 text-sm">{formErrors[`companion.lastNameP.${index}`]}</p>
+                                  )}
                                 </div>
                                 <div className="space-y-2">
                                   <Label htmlFor={`companion.lastNameM.${index}`}>Apellido Materno</Label>
@@ -644,6 +993,9 @@ export default function CheckoutPage() {
                                     value={companion.firstName}
                                     onChange={handleChange}
                                   />
+                                  {formErrors[`companion.firstName.${index}`] && (
+                                    <p className="text-red-500 text-sm">{formErrors[`companion.firstName.${index}`]}</p>
+                                  )}
                                 </div>
                               </div>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -679,16 +1031,23 @@ export default function CheckoutPage() {
                                     value={companion.birthDate}
                                     onChange={handleChange}
                                   />
+                                  {formErrors[`companion.birthDate.${index}`] && (
+                                    <p className="text-red-500 text-sm">{formErrors[`companion.birthDate.${index}`]}</p>
+                                  )}
                                 </div>
                                 <div className="space-y-2">
                                   <Label htmlFor={`companion.gender.${index}`}>Sexo (H/M)</Label>
                                   <Input
-                                    id="companion.gender.${index}"
+                                    id={`companion.gender.${index}`}
                                     name={`companion.gender.${index}`}
                                     placeholder="H o M"
                                     value={companion.gender}
                                     onChange={handleChange}
+                                    maxLength={1}
                                   />
+                                  {formErrors[`companion.gender.${index}`] && (
+                                    <p className="text-red-500 text-sm">{formErrors[`companion.gender.${index}`]}</p>
+                                  )}
                                 </div>
                               </div>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -701,6 +1060,9 @@ export default function CheckoutPage() {
                                     value={companion.street}
                                     onChange={handleChange}
                                   />
+                                  {formErrors[`companion.street.${index}`] && (
+                                    <p className="text-red-500 text-sm">{formErrors[`companion.street.${index}`]}</p>
+                                  )}
                                 </div>
                                 <div className="space-y-2">
                                   <Label htmlFor={`companion.neighborhood.${index}`}>Colonia</Label>
@@ -711,6 +1073,9 @@ export default function CheckoutPage() {
                                     value={companion.neighborhood}
                                     onChange={handleChange}
                                   />
+                                  {formErrors[`companion.neighborhood.${index}`] && (
+                                    <p className="text-red-500 text-sm">{formErrors[`companion.neighborhood.${index}`]}</p>
+                                  )}
                                 </div>
                               </div>
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -723,6 +1088,9 @@ export default function CheckoutPage() {
                                     value={companion.postalCode}
                                     onChange={handleChange}
                                   />
+                                  {formErrors[`companion.postalCode.${index}`] && (
+                                    <p className="text-red-500 text-sm">{formErrors[`companion.postalCode.${index}`]}</p>
+                                  )}
                                 </div>
                                 <div className="space-y-2">
                                   <Label htmlFor={`companion.extNumber.${index}`}>Número exterior</Label>
@@ -755,6 +1123,9 @@ export default function CheckoutPage() {
                                     value={companion.city}
                                     onChange={handleChange}
                                   />
+                                  {formErrors[`companion.city.${index}`] && (
+                                    <p className="text-red-500 text-sm">{formErrors[`companion.city.${index}`]}</p>
+                                  )}
                                 </div>
                                 <div className="space-y-2">
                                   <Label htmlFor={`companion.state.${index}`}>Estado</Label>
@@ -765,6 +1136,9 @@ export default function CheckoutPage() {
                                     value={companion.state}
                                     onChange={handleChange}
                                   />
+                                  {formErrors[`companion.state.${index}`] && (
+                                    <p className="text-red-500 text-sm">{formErrors[`companion.state.${index}`]}</p>
+                                  )}
                                 </div>
                                 <div className="space-y-2">
                                   <Label htmlFor={`companion.country.${index}`}>País</Label>
@@ -775,6 +1149,9 @@ export default function CheckoutPage() {
                                     value={companion.country}
                                     onChange={handleChange}
                                   />
+                                  {formErrors[`companion.country.${index}`] && (
+                                    <p className="text-red-500 text-sm">{formErrors[`companion.country.${index}`]}</p>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -948,10 +1325,18 @@ export default function CheckoutPage() {
                               </p>
                             </div>
                           </div>
+                          {formErrors.termsAccepted && (
+                            <p className="text-red-500 text-sm">{formErrors.termsAccepted}</p>
+                          )}
                         </div>
                       </CardContent>
                       <CardFooter className="flex justify-between">
-                        <Button type="button" variant="outline" onClick={handleGenerateQuote} disabled={isGeneratingQuote}>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleGenerateQuote}
+                          disabled={isGeneratingQuote}
+                        >
                           {isGeneratingQuote ? (
                             <>Generando...</>
                           ) : (
@@ -979,17 +1364,17 @@ export default function CheckoutPage() {
                     <div className="flex gap-4">
                       <div className="relative w-20 h-20 rounded-md overflow-hidden shrink-0">
                         <Image
-                          src={hotelData.image || "/images/logo.png"}
-                          alt={hotelData.name}
+                          src={hotel.image || "/images/logo.png"}
+                          alt={hotel.name}
                           fill
                           className="object-cover"
                         />
                       </div>
                       <div>
-                        <h3 className="font-medium">{hotelData.name}</h3>
+                        <h3 className="font-medium">{hotel.name}</h3>
                         <div className="flex items-center text-muted-foreground text-sm">
                           <MapPin className="h-3.5 w-3.5 mr-2" />
-                          {hotelData.location}
+                          {hotel.location}
                         </div>
                       </div>
                     </div>
@@ -1017,38 +1402,56 @@ export default function CheckoutPage() {
 
                     <div className="space-y-2">
                       <div className="flex justify-between">
-                        <span>Precio por noche</span>
-                        <span>${roomPrice} MXN</span>
+                        <span>Precio por noche (sin impuestos)</span>
+                        <span>{Math.round(basePrice)}</span>
                       </div>
                       <div className="flex justify-between">
                         <div className="flex items-center gap-1">
-                          <span>Impuestos y cargos</span>
+                          <span>IVA (16%)</span>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Info className="h-3.5 w-3.5 text-muted-foreground" />
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>Incluye IVA (16%) y cargos por servicio</p>
+                                <p>Impuesto al Valor Agregado (16%)</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                         </div>
-                        <span>${taxAmount} MXN</span>
+                        <span>{Math.round(iva)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <div className="flex items-center gap-1">
+                          <span>ISH (4%)</span>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Impuesto Sobre Hospedaje (4%)</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                        <span>{Math.round(ish)}</span>
                       </div>
                       <Separator />
                       <div className="flex justify-between font-bold text-lg">
                         <span>Total</span>
-                        <span>${totalAmount} MXN</span>
+                        <span>{Math.round(totalPrice)}</span>
                       </div>
                     </div>
 
-                    <div className="bg-muted p-3 rounded-lg text-sm space-y-2">
+                    <div className="bg-muted p-3 rounded-lg text-sm">
                       <div className="flex items-start gap-2">
                         <Shield className="h-4 w-4 text-primary mt-0.5" />
                         <div>
                           <p className="font-medium">Política de cancelación</p>
-                          <p className="text-muted-foreground">Cancelación gratuita hasta 48 horas antes de la llegada</p>
+                          <p className="text-muted-foreground">
+                            Cancelación gratuita hasta 48 horas antes de la llegada
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -1075,7 +1478,7 @@ export default function CheckoutPage() {
             <Link href="/privacy" className="text-sm font-medium hover:underline underline-offset-4">
               Privacidad
             </Link>
-            <Link href="/contact" className="text-sm font-medium hover:underline underline-offset-4">
+            <Link href="/contact" className="text-sm font-medium hover:underline">
               Contacto
             </Link>
           </nav>
