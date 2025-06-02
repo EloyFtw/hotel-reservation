@@ -186,7 +186,7 @@ export default function ReservationDetailPage() {
                 nights: hospedaje.Cantidad_noches,
               }]
             : [{
-                number: "No asignada",
+                number: "se asignara el día del check-in",
                 floor: 0,
                 price: 0,
                 nights: 1,
@@ -385,7 +385,7 @@ function CancelledReservation({ reservation }: { reservation: Reservation }) {
               </div>
               <p className="mt-1">
                 {reservation.rooms.map((room, index) => (
-                  <span key={index}>Habitación {room.number}, Planta {room.floor}</span>
+                  <span key={index}>Habitación: {room.number}, Planta: {room.floor}</span>
                 ))}
               </p>
             </div>

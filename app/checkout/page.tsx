@@ -599,7 +599,7 @@ export default function CheckoutPage() {
       }
 
       // Redirigir a confirmación
-      router.push("/confirmation")
+     router.push(`/confirmation?reservationId=${reservacion.ID_Reservacion}`)
     } catch (error) {
       console.error("Error al procesar la reserva:", error)
       setSubmissionError(errors.message || "Error al procesar la reserva. Intenta de nuevo.")
