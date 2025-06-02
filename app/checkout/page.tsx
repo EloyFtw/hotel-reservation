@@ -582,7 +582,7 @@ export default function CheckoutPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          FK_Reservacion: reservacion.id,
+          FK_Reservacion: reservacion.ID_Reservacion,
           FK_Habitacion: null,
           FK_CAT_Tipo_Habitacion: selectedRoom.id,
           Cant_Noches: 1,
