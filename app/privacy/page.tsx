@@ -28,7 +28,7 @@ export default function PrivacyPage() {
           <div className="flex items-center gap-4">
             <Link href="/login">
               <Link href="/login">
-                <span className="text-sm font-medium hover:underline underline-offset-4">Iniciar Sesión</span>
+                <span className="text-sm font-medium  hover:underline underline-offset-4">Iniciar Sesión</span>
               </Link>
             </Link>
           </div>

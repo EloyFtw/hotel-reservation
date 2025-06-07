@@ -197,7 +197,7 @@ export default function HotelDetailPage() {
             <Button
               variant="ghost"
               size="icon"
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full"
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white rounded-full"
               onClick={handlePrevImage}
             >
               <ChevronLeft className="h-6 w-6" />
@@ -206,7 +206,7 @@ export default function HotelDetailPage() {
             <Button
               variant="ghost"
               size="icon"
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full"
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white rounded-full"
               onClick={handleNextImage}
             >
               <ChevronRight className="h-6 w-6" />

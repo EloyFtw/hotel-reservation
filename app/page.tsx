@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import FeaturedBranches from "@/components/featured-hotels"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function HomePage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -73,7 +73,7 @@ export default function HomePage() {
           <div className="flex items-center gap-4">
             {isAuthenticated ? (
               <Link href="/dashboard">
-                <Button size="sm">Dashboard</Button>
+                <Button size="sm" >Dashboard</Button>
               </Link>
             ) : (
               <>
@@ -91,7 +91,7 @@ export default function HomePage() {
         </div>
       </header>
       <main className="flex-1">
-        <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-r from-primary/10 via-primary/5 to-background">
+        <section className="w-full py-12 md:py-24 lg:py-32 bg-blue-200 bg-gradient-to-r from-primary/15 via-primary/10 to-background">
           <div className="container px-4 md:px-6">
             <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_500px]">
               <div className="flex flex-col justify-center space-y-4">
@@ -160,7 +160,7 @@ export default function HomePage() {
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
-                <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary">
+                <div className="inline-block rounded-lg bg-blue-300 px-3 py-1 text-sm text-primary">
                   Nuestras Sucursales
                 </div>
                 <h2 className="text-3xl font-bold tracking-tighter md:text-4xl/tight">

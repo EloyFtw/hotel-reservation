@@ -8,7 +8,7 @@ import { Award, Building, Calendar, MapPin, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function AboutPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)

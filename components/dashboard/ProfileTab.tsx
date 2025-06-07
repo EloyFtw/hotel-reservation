@@ -11,7 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Usuario, Ciudad, FormData } from "./types";
 import { validateForm, fetchPaises, fetchEstados, fetchCiudades, getToken } from "./utils";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 interface ProfileTabProps {
   user: Usuario | null;

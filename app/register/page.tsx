@@ -16,7 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 // Configuración de la URL del backend desde la variable de entorno
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function RegisterPage() {
   const router = useRouter()

@@ -3,7 +3,7 @@
 import { Usuario, Reservation, FavoriteHotel, Ciudad, Reservacion, Persona, FormData } from "./types";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export const getToken = () => localStorage.getItem("token");
 
@@ -118,26 +118,12 @@ export const fetchUser = async (
         Pais: userData.huesped.persona.Ciudad?.Pais || "",
         Estado: userData.huesped.persona.Ciudad?.Estado || "",
         FK_Ciudad: userData.huesped.persona.FK_Ciudad?.toString() || "",
-      });
-      if (userData.huesped.persona.Ciudad?.Pais) {
-        await fetchEstados(userData.huesped.persona.Ciudad.Pais);
-      }
-    } else {
-      setFormData({
-        Nombre: "",
-        SegundoNombre: "",
-        Apellido_Paterno: "",
-        Apellido_Materno: "",
-        Fecha_Nacimiento: "",
-        Edad: "",
-        Sex: "",
-        Celular: "",
-        Correo: userData.Mail || "",
-        Direccion: "",
-        Pais: "",
-        Estado: "",
-        FK_Ciudad: "",
-      });
+        Calle: userData.huesped.persona.Direccion ? userData.huesped.persona.Direccion.split(",")[0]?.toString() || "" : "",
+        Colonia: userData.huesped.persona.Direccion ? userData.huesped.persona.Direccion.split(",")[1]?.toString() || "" : "",
+        CodigoPostal: userData.huesped.persona.Direccion ? userData.huesped.persona.Direccion.split(",")[2]?.toString() || "" : "",
+        NumeroInterior: userData.huesped.persona.Direccion ? userData.huesped.persona.Direccion.split(",")[3]?.toString() || "" : "",
+        NumeroExterior: userData.huesped.persona.Direccion ? userData.huesped.persona.Direccion.split(",")[4]?.toString() || "" : "",
+      });      
     }
   } catch (err: any) {
     console.error("Error al cargar usuario:", err);
