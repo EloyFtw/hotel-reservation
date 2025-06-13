@@ -30,6 +30,11 @@ export default function DashboardLayout() {
     Pais: "",
     Estado: "",
     FK_Ciudad: "",
+    Calle: "",
+    Colonia: "",
+    CodigoPostal: "",
+    NumeroInterior: "",
+    NumeroExterior: "",
   });
   const [formErrors, setFormErrors] = useState<Partial<Record<keyof FormData, string>>>({});
   const [error, setError] = useState<string | null>(null);
