@@ -236,7 +236,7 @@ export default function PrivacyPage() {
                 </ul>
                 <p>
                   Para ejercer cualquiera de estos derechos, por favor contáctenos utilizando la información
-                  proporcionada en la sección Contacto a continuación. Responderemos a su solicitud dentro de los
+                  proporcionada en la sección "Contacto" a continuación. Responderemos a su solicitud dentro de los
                   plazos establecidos por las leyes aplicables.
                 </p>
               </div>
@@ -270,7 +270,7 @@ export default function PrivacyPage() {
                 <p>
                   Podemos actualizar esta Política de Privacidad periódicamente para reflejar cambios en nuestras
                   prácticas de información o requisitos legales. La versión actualizada se publicará en nuestro sitio
-                  web con la fecha de última actualización revisada. Le recomendamos revisar esta política
+                  web con la fecha de "última actualización" revisada. Le recomendamos revisar esta política
                   regularmente.
                 </p>
                 <p>

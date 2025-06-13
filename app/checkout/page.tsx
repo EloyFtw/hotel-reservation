@@ -150,9 +150,7 @@ export default function CheckoutPage() {
         const data = await getHotelById(hotelId)
         setHotel(data)
         setHotelError(null)
-      }     
-      catch (errors) {
-        console.error("Error al cargar el hotel:", errors)
+      } catch (err) {
         setHotelError("No se pudo cargar el hotel. Intenta de nuevo.")
       } finally {
         setIsHotelLoading(false)
